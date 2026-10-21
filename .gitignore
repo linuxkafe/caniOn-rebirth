@@ -1,0 +1,17 @@
+# Never commit proprietary binaries
+*.apk
+*.aab
+*.dex
+*.jar
+*.keystore
+*.jks
+*.p12
+
+# Decoded APK working dirs
+*decoded/
+*decoded*/
+canion-*/
+apktool.yml
+
+# Local tooling
+.tools/
