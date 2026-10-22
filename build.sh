@@ -61,7 +61,7 @@ elif [ -x "$ROOT/tools/kotlinc/bin/kotlinc" ]; then
   KOTLINC="$ROOT/tools/kotlinc/bin/kotlinc"
 else
   say "downloading the Kotlin compiler ($KOTLIN_VERSION)…"
-  mkdir -p "$ROOT/tools"
+  mkdir -p "$BUILD" "$ROOT/tools"
   URL="https://github.com/JetBrains/kotlin/releases/download/v$KOTLIN_VERSION/kotlin-compiler-$KOTLIN_VERSION.zip"
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL "$URL" -o "$BUILD/kotlinc.zip"
@@ -70,7 +70,6 @@ else
   else
     die "no curl or wget, and no Kotlin compiler found"
   fi
-  mkdir -p "$ROOT/tools"
   unzip -q -o "$BUILD/kotlinc.zip" -d "$ROOT/tools"
   KOTLINC="$ROOT/tools/kotlinc/bin/kotlinc"
   rm -f "$BUILD/kotlinc.zip"
