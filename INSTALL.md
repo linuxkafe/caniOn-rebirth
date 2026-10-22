@@ -85,15 +85,29 @@ down this list:
 
 1. Pair the OBD adapter in the Android Bluetooth settings (Classic SPP, not BLE).
 2. Launch caniOn and pick the adapter from the device list.
-3. The app opens its database at `/storage/emulated/0/BT_CAN/btcan.db`. If the
-   directory does not exist yet, create it once (`adb shell mkdir -p
-   /sdcard/BT_CAN`) or the app will log `SQLITE_CANTOPEN` and show an empty screen.
+3. The app creates its working directory `/sdcard/BT_CAN/` on first run and puts
+   the SQLite database there. If the log shows
+   `SQLITE_CANTOPEN`, check that the directory is writable:
+   ```bash
+   adb shell ls -la /sdcard/BT_CAN
+   ```
+4. To switch on file logging, create the flag file and restart the app:
+   ```bash
+   adb shell touch /sdcard/BT_CAN/log_main.txt
+   adb shell touch /sdcard/BT_CAN/log_scanner.txt
+   adb shell am force-stop emobility.canion
+   adb shell am start -n emobility.canion/.main
+   ```
 
 ## The log to look at
 
 ```bash
-adb logcat | grep -E "B4A|AndroidRuntime"
+adb logcat -s B4A
 ```
 
 A healthy start shows `Activity (main) Create`, then `Activity_Resume`, and no
 `B4A` lines containing `Exception`, `Error`, `Security` or `CantOpen`.
+
+See **[DEBUGGING.md](DEBUGGING.md)** for the full picture: the other flag
+files, the database schema, and how to check the protocol with the
+command-line client.

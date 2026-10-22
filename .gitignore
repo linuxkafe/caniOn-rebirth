@@ -32,3 +32,6 @@ reference/
 
 # Locally installed Android build-tools (apksigner, zipalign, aapt2)
 .tools/
+
+# The emulator is told to install the app; the debug directory lives on the
+# device, not here.

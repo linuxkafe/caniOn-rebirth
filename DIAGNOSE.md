@@ -66,10 +66,20 @@ adb install caniOn_152_patched_v1v2.apk
 
 ## Nota sobre o directório de dados
 
-Depois de instalado, o app abre a base de dados em
-`/storage/emulated/0/BT_CAN/btcan.db`. Num telefone novo esse directório não
-existe e o app mostra um ecrã vazio com `SQLITE_CANTOPEN` no log. Cria-o:
+O app cria sozinho o directório `/sdcard/BT_CAN/` no primeiro arranque e lá
+guarda a base de dados `btcan.db`. Se o log mostrar `SQLITE_CANTOPEN`, o
+directório não está a ser criado — verifica:
 
 ```bash
-adb shell mkdir -p /sdcard/BT_CAN
+adb shell ls -la /sdcard/BT_CAN
 ```
+
+E para activar o log em ficheiro:
+
+```bash
+adb shell touch /sdcard/BT_CAN/log_main.txt
+adb shell am force-stop emobility.canion
+adb shell am start -n emobility.canion/.main
+```
+
+Vê [DEBUGGING.md](DEBUGGING.md) para o quadro completo.

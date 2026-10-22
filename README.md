@@ -37,6 +37,26 @@ See **[INSTALL.md](INSTALL.md)** for the install procedure, the expected file
 size and SHA-256, and what to do if the phone reports *"a problem occurred while
 analysing the package"*.
 
+## Debugging
+
+caniOn has three diagnostic channels, all of which work on the patched build
+with no extra tooling:
+
+1. **logcat**, tag `B4A` — always on: `adb logcat -s B4A`
+2. **The app's working directory** `/sdcard/BT_CAN/` — the SQLite database
+   (`btcan.db`), the rendered trip reports, and the log files
+3. **File logging**, enabled by creating a flag file:
+   `adb shell touch /sdcard/BT_CAN/log_main.txt`
+
+Full details in **[DEBUGGING.md](DEBUGGING.md)**.
+
+You can also check the protocol independently of the app:
+
+```bash
+./build/caniOn-cli --serial /dev/ttyUSB0     # a USB-OTG ELM327
+./build/caniOn-cli --tcp localhost:35000     # a Bluetooth SPP bridge
+```
+
 ## What was wrong with the original
 
 | Problem | Cause | Fix |
