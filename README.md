@@ -29,17 +29,25 @@ This project provides patch notes and build instructions to make the original ca
    ```bash
    apktool d caniOn_152_APKPure.apk -o caniOn-decoded
    ```
-3. Apply patches to `smali/emobility/canion/scanner.smali`:
-   - Replace `const-string v3, "STM"` with `const-string v3, "ATMA"`
-   - Replace `const-string v3, "STFCP"` with `const-string v3, "ATFCSM"`
-   - Replace `const-string v3, "STFAP` with `const-string v3, "ATFCSH`
-4. Update `apktool.yml`:
-   ```yaml
-   targetSdkVersion: 33
+3. Apply the patches (this is the whole job):
+   ```bash
+   ./patch.sh caniOn-decoded
    ```
-5. Update `AndroidManifest.xml`:
-   - Add `BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN`, and foreground service permissions.
-6. Rebuild, align and sign:
+   Or by hand:
+   - `smali/emobility/canion/scanner.smali`:
+     - `const-string v3, "STM"` → `const-string v3, "ATMA"`
+     - `const-string v3, "STFCP"` → `const-string v3, "ATFCSM"`
+     - `const-string v3, "STFAP` → `const-string v3, "ATFCSH`
+   - `apktool.yml`:
+     ```yaml
+     targetSdkVersion: 33
+     versionName: ""      # must stay EMPTY — see below
+     ```
+   - `AndroidManifest.xml`:
+     - `<activity android:exported="true" android:label="caniOn152" ... android:name=".main">`
+     - Add `BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`,
+       `FOREGROUND_SERVICE_LOCATION`.
+4. Rebuild, align and sign:
    ```bash
    apktool b caniOn-decoded -o caniOn-unsigned.apk
    zipalign -v 4 caniOn-unsigned.apk caniOn-aligned.apk
@@ -47,10 +55,15 @@ This project provides patch notes and build instructions to make the original ca
      --ks-pass pass:android --key-pass pass:android \
      --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
      --out caniOn-signed.apk caniOn-aligned.apk
-   apksigner verify --verbose caniOn-signed.apk
+   ```
+5. Verify — **do not skip this**:
+   ```bash
+   ./release-gate.sh caniOn-signed.apk 30
+   aapt dump xmltree caniOn-signed.apk AndroidManifest.xml | grep versionName
+   # must print:  A: android:versionName(0x0101021c)="" (Raw: "")
    ```
 
-> **Critical**: Use `apksigner`, not `jarsigner`. `jarsigner` breaks the APK in two independent ways:
+> **Critical 1**: Use `apksigner`, not `jarsigner`. `jarsigner` breaks the APK in two independent ways:
 > 1. It signs only the v1 (JAR) scheme, but Android 11+ requires **APK Signature Scheme v2** for
 >    any APK with `targetSdkVersion >= 30`. The installer reports **"Invalid package"**.
 > 2. It picks a v1 digest algorithm (SHA-256/SHA-384) that is **not supported on API 14–20**, while
@@ -60,6 +73,14 @@ This project provides patch notes and build instructions to make the original ca
 > Always confirm with `apksigner verify --verbose` that `v2 scheme: true`, and with
 > `apksigner verify --min-sdk-version 30` that the platform would accept it. A plain
 > `apksigner verify` exits 0 on a v1-only APK — it reports facts, not a verdict.
+
+> **Critical 2**: `versionName: ""` must be **empty**, not a real version string. The app derives
+> its string-decryption key from `PackageInfo.versionName`; the original attribute is `""` and the
+> key depends on those exact bytes. See PATCH-NOTES.md.
+
+> **Critical 3**: `android:exported="true"` on the launcher activity is mandatory once
+> `targetSdkVersion >= 31`. Bumping the target SDK *activates* this requirement — the original v152
+> (targetSdk 29) never needed it. Without it, Android 12+ refuses to install the app.
 
 **Important**: If you already have caniOn installed, you must uninstall it first before installing the patched version, as the signing key will differ from the original release.
 
@@ -73,9 +94,12 @@ This project provides patch notes and build instructions to make the original ca
 
 ## Troubleshooting
 
-**"Invalid package" error**: Two common causes:
+**"Invalid package" error**: Three known causes, in the order you should check them:
 1. **Wrong signature scheme** — the APK was signed with `jarsigner` (v1 only). Android 11+ requires APK Signature Scheme v2+ for `targetSdkVersion` 30+. Re-sign with `apksigner` and verify `Verified using v2 scheme: true`.
-2. **Signature mismatch** — the patched APK uses a different key than the original release. Uninstall any existing caniOn before installing.
+2. **Missing `android:exported`** — if you bumped `targetSdkVersion` to 31+, the launcher activity needs an explicit `android:exported="true"`. Check with `aapt dump xmltree`.
+3. **Signature mismatch** — the patched APK uses a different key than the original release. Uninstall any existing caniOn before installing.
+
+**App installs but crashes immediately on launch** with `NullPointerException ... main$1.<init>`: the `android:versionName` attribute was dropped by apktool. The app derives its string-decryption key from `PackageInfo.versionName`; if the attribute is missing, that value is `null`. Restore `versionName: ""` in `apktool.yml` — it must be the **empty string**, matching the original manifest.
 
 **"Parse error: Problem parsing the package"**: the APK is corrupted in transit. Re-download and verify the SHA256 hash.
 

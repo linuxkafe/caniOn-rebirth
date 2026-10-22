@@ -8,7 +8,11 @@
 # Patches applied:
 #   1. STN1110 monitor commands -> ELM327 equivalents, in scanner.smali
 #   2. targetSdkVersion 29 -> 33, in apktool.yml
-#   3. Android 12+/13+ permissions, in AndroidManifest.xml
+#   3. android:exported="true" on the launcher activity  (Android 12+ install requirement)
+#   4. restore android:versionName=""                       (apktool drops it; the app's
+#                                                         string-decryption key is derived
+#                                                         from PackageInfo.versionName)
+#   5. Android 12+/13+ permissions, in AndroidManifest.xml
 #
 # See README.md for the caveats around (1) — the command *names* are translated
 # but the *argument domain* is not, and that needs on-device verification.
@@ -50,7 +54,38 @@ else
   echo "    already 33 (or absent)"
 fi
 
-# ---------------------------------------------------------------- 3. perms
+# ------------------------------------------------- 3. versionName (apktool bug)
+# apktool records `versionName: null` when the manifest attribute is present but
+# empty, and then DROPS the attribute on rebuild. The app derives its
+# string-decryption key from PackageManager.getPackageInfo(pkg,0).versionName.
+# With the attribute absent, versionName is null and the app dies with an NPE
+# in main$1.<init> during initializeProcessGlobals.
+# It must be restored as an EMPTY string, not a real version: the original
+# attribute is "", and the decryption key depends on the exact bytes.
+echo "==> Patching versionName (must stay an empty string)"
+if grep -q 'versionName: null' "$YML"; then
+  sed -i 's/versionName: null/versionName: ""/' "$YML"
+  echo "    null -> \"\" (empty, matching the original manifest)"
+  changed=1
+else
+  echo "    already set"
+fi
+
+# ---------------------------------------------------------------- 4. exported
+# Android 12+ (API 31) refuses to install an app with targetSdkVersion >= 31
+# whose components with intent filters lack an explicit android:exported.
+# The launcher activity must be exported=true; everything else has no
+# intent-filter and defaults to exported=false.
+echo "==> Patching android:exported on the launcher activity"
+if grep -q 'android:name=".main"' "$MANIFEST" && ! grep -q 'android:exported="true" android:label="caniOn152"'; then
+  sed -i 's|<activity android:label="caniOn152"|<activity android:exported="true" android:label="caniOn152"|' "$MANIFEST"
+  echo "    .main -> android:exported=\"true\""
+  changed=1
+else
+  echo "    already set"
+fi
+
+# ---------------------------------------------------------------- 5. perms
 echo "==> Patching AndroidManifest.xml permissions"
 for perm in BLUETOOTH_CONNECT BLUETOOTH_SCAN FOREGROUND_SERVICE_CONNECTED_DEVICE FOREGROUND_SERVICE_LOCATION; do
   if grep -q "android.permission.${perm}" "$MANIFEST"; then
@@ -71,6 +106,11 @@ if [ "$changed" -eq 1 ]; then
   echo "    --ks-pass pass:<pass> --key-pass pass:<pass> \\"
   echo "    --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \\"
   echo "    --out caniOn-signed.apk caniOn-aligned.apk"
+  echo
+  echo "Then VERIFY (do not skip these):"
+  echo "  apksigner verify --min-sdk-version 30 caniOn-signed.apk"
+  echo "  aapt dump xmltree caniOn-signed.apk AndroidManifest.xml | grep versionName"
+  echo "    -> must show: A: android:versionName(0x0101021c)=\"\" (Raw: \"\")"
 else
   echo "No changes needed (already patched)."
 fi
