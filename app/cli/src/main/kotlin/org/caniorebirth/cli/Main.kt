@@ -149,9 +149,15 @@ object Main {
         }
     }
 
-    /** A real serial port. */
+    /**
+     * A real serial port.
+     *
+     * The JDK has no public serial-port API, so the line discipline is set
+     * with `stty` (115200 8N1, raw) and the port is then read and written as
+     * plain streams. On systems without `stty` the port is opened as-is.
+     */
     private class SerialTransport(private val device: String) : Transport {
-        private val stream: InputStream
+        private val input: InputStream
         private val out: OutputStream
 
         init {
@@ -159,15 +165,9 @@ object Main {
             if (!file.exists()) {
                 throw IllegalArgumentException("serial device not found: $device")
             }
-            val channel = java.nio.channels.FileChannel.open(
-                file.toPath(),
-                java.nio.file.StandardOpenOption.READ,
-                java.nio.file.StandardOpenOption.WRITE,
-            )
-            // 115200 8N1 — the ELM327 default.
-            channel.setOption(java.nio.channels.StandardSocketOptions.TTY_BAUD, 115200)
-            stream = java.nio.channels.Channels.newInputStream(channel)
-            out = java.nio.channels.Channels.newOutputStream(channel)
+            configureLine(device)
+            input = java.io.FileInputStream(file)
+            out = java.io.FileOutputStream(file)
         }
 
         override fun write(bytes: ByteArray) {
@@ -175,7 +175,25 @@ object Main {
             out.flush()
         }
 
-        override fun read(buffer: ByteArray): Int = stream.read(buffer)
+        override fun read(buffer: ByteArray): Int = input.read(buffer)
+
+        companion object {
+            private fun configureLine(device: String) {
+                val candidates = listOf(
+                    listOf("stty", "-F", device, "115200", "raw", "-echo"),
+                    listOf("stty", "-f", device, "115200", "raw", "-echo"),
+                )
+                for (cmd in candidates) {
+                    try {
+                        val p = ProcessBuilder(cmd).redirectErrorStream(true).start()
+                        if (p.waitFor() == 0) return
+                    } catch (_: Exception) {
+                        // try the next form
+                    }
+                }
+                // No stty: assume the port is already configured.
+            }
+        }
     }
 
     /** A TCP socket, typically a Bluetooth SPP bridge. */
