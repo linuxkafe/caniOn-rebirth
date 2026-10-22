@@ -59,10 +59,14 @@ find_apktool() {
 
 find_build_tools() {
   if [ -n "${BUILD_TOOLS_DIR:-}" ] && [ -x "$BUILD_TOOLS_DIR/apksigner" ]; then echo "$BUILD_TOOLS_DIR"; return; fi
-  for d in "$ANDROID_HOME"/build-tools/* "$ANDROID_SDK_ROOT"/build-tools/* \
-           "$HOME/Android/Sdk/build-tools"/* /opt/android-sdk/build-tools/* \
-           "$ROOT/tools/build-tools"; do
-    [ -x "$d/apksigner" ] && { echo "$d"; return; }
+  local roots=()
+  [ -n "${ANDROID_HOME:-}" ] && roots+=("$ANDROID_HOME/build-tools")
+  [ -n "${ANDROID_SDK_ROOT:-}" ] && roots+=("$ANDROID_SDK_ROOT/build-tools")
+  roots+=("$HOME/Android/Sdk/build-tools" "/opt/android-sdk/build-tools" "$ROOT/tools/build-tools")
+  for r in "${roots[@]}"; do
+    for d in "$r"/*; do
+      [ -x "$d/apksigner" ] && { echo "$d"; return; }
+    done
   done
   return 1
 }
