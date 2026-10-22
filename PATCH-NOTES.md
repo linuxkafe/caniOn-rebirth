@@ -1,19 +1,56 @@
 # caniOn Rebirth — Patch Notes
 
-## Release 0.2 — Vgate iCar Pro 2S + Android 13+
+## Release 0.3 — Vgate iCar Pro 2S + Android 13+
 
 ### Patches
 
 | # | Target | Change | Sites |
 |---|--------|--------|-------|
 | 1 | `smali/emobility/canion/scanner.smali` | `STM` → `ATMA` | 3 |
-| 2 | `smali/emobility/canion/scanner.smali` | `STFCP` → `ATFCSM` | 19 |
-| 3 | `smali/emobility/canion/scanner.smali` | `STFAP` → `ATFCSH` | 30 |
-| 4 | `apktool.yml` | `targetSdkVersion` 29 → 33 | 1 |
-| 5 | `apktool.yml` | `versionName: null` → `versionName: ""` | 1 |
-| 6 | `AndroidManifest.xml` | `+android:exported="true"` on `.main` | 1 |
-| 7 | `AndroidManifest.xml` | `+BLUETOOTH_CONNECT`, `+BLUETOOTH_SCAN` | 2 |
-| 8 | `AndroidManifest.xml` | `+FOREGROUND_SERVICE_CONNECTED_DEVICE`, `+FOREGROUND_SERVICE_LOCATION` | 2 |
+| 2 | `smali/emobility/canion/scanner.smali` | `STMA` → `ATMA` | 1 |
+| 3 | `smali/emobility/canion/scanner.smali` | `STFCP` → `ATCAF0` | 18 |
+| 4 | `smali/emobility/canion/scanner.smali` | `STFAP <id>, <mask>` → `ATCAF0` (arguments dropped) | 29 |
+| 5 | `apktool.yml` | `targetSdkVersion` 29 → 33 | 1 |
+| 6 | `apktool.yml` | `versionName: null` → `versionName: ""` | 1 |
+| 7 | `AndroidManifest.xml` | `+android:exported="true"` on `.main` | 1 |
+| 8 | `AndroidManifest.xml` | `+BLUETOOTH_CONNECT`, `+BLUETOOTH_SCAN` | 2 |
+| 9 | `AndroidManifest.xml` | `+FOREGROUND_SERVICE_CONNECTED_DEVICE`, `+FOREGROUND_SERVICE_LOCATION` | 2 |
+
+The original `ATFCSH761` / `ATFCSD300000` / `ATFCSM1` / `ATSH761` commands are
+**ELM327 already** and are left untouched.
+
+### Why the filter list is replaced by `ATCAF0`
+
+The original client used STN1110 filter commands:
+
+```
+STFCP                 clear the filter list
+STFAP 29A, FFF        accept frames from CAN ID 0x29A
+STFAP 6FA, FFF        accept frames from CAN ID 0x6FA
+...
+STM                   start monitoring
+```
+
+ELM327 has **no equivalent**. `ATCA` accepts exactly one identifier (or one
+identifier/mask pair) at a time; there is no multi-identifier filter list. The
+mapping options are:
+
+1. `ATCAF0` (accept everything) then `ATMA` — simplest, portable, and correct:
+   the client already dispatches on the CAN identifier in software, so
+   hardware-side filtering is an optimisation, not a requirement.
+2. `ATCAF1` + a single `ATCA <id>, <mask>` covering the whole required ID
+   range. The required IDs (0x210, 0x298, 0x29A, 0x346, 0x373, 0x374, 0x384,
+   0x389, 0x412, 0x418, 0x424, 0x6E0, 0x6E1–0x6E4, 0x762) span 0x210–0x7FF and
+   cannot be covered by one ELM mask without admitting unrelated traffic.
+3. Re-assert `ATCA` per identifier — not supported by all ELM clones.
+
+Option 1 is used. The cost is more Bluetooth traffic; the benefit is that the
+adapter no longer has to understand a command family it does not implement.
+
+**Note on the argument domain.** `STFAP 298, FFF` takes a CAN ID *and a bit
+mask*; `ATCAF0` takes neither. The arguments are dropped, not translated —
+`ATCAF0 298, FFF` is a malformed command that some adapters answer with
+`ERROR`.
 
 ### The three install/runtime blockers
 
@@ -47,17 +84,6 @@ The fix is to restore it as an **empty string**, not a real version number: the 
 is `""` and the decryption key depends on the exact bytes. `versionName: ""` in `apktool.yml`
 produces `android:versionName(0x0101021c)="" (Raw: "")` in the binary manifest.
 
-### Why the command swap
-
-The original app was written against the **STN1110** OBD chip dialect (OBDLink LX). Its monitor
-commands — `STM` (set monitor), `STFCP` (filter clear/pass), `STFAP` (filter accept) — are
-STN1110-specific. ELM327-family adapters (Vgate iCar Pro 2S and most modern clones) speak the
-ELM dialect instead: `ATMA` (monitor all), `ATFCSM`, `ATFCSH`.
-
-The shared commands (`ATZ`, `ATSP6`, `ATE0`, `ATH1`, `ATL0`, `ATS0`) succeed on both, which is why
-the app *connects* to a Vgate and then goes **silent** — the first STN-only command gets no
-meaningful reply.
-
 ### Verification performed
 
 | Check | Result |
@@ -69,15 +95,17 @@ meaningful reply.
 | ZIP entry count vs. original | 220 = 220 |
 | `adb install` on Android 11 (API 30) emulator | **Success** |
 | App launch on API 30 emulator | **No crash**, `.main` resumed, 0 FATAL EXCEPTIONs |
-| `adb install` on Android 15 (API 35) emulator | see README |
+| `adb install` on Android 15 (API 35) emulator | **Success** (pre-fix build fails with `INSTALL_PARSE_FAILED_MANIFEST_MALFORMED`) |
+| App launch on API 35 emulator | **No crash**, `.main` resumed, 0 FATAL EXCEPTIONs |
 | Data flow from a real Vgate | **NOT RUN** — needs the physical adapter |
 
 ### Known caveats
 
-See the "Known Caveats" section of the README. In short:
+- `BLUETOOTH_CONNECT` is a **runtime** permission on Android 12+. The manifest declares it, but the
+  app predates API 23 runtime permissions and has no `requestPermissions` call, so it will need to
+  be granted manually (or the app will throw `SecurityException` at the socket).
+- `<service android:name=".scanner"/>` has no `android:foregroundServiceType`, so the
+  `FOREGROUND_SERVICE_*` permissions declared are currently unusable.
+- The STN1110 (OBDLink LX) path may have regressed: `ATMA` is understood by the STN1110, but the
+  `ATCAF0` filter replacement is not semantically equivalent to `STFAP`/`STFCP` on that chip.
 
-- The `ATFCSH` translation is faithful in *name* but not in *argument domain* (ELM wants a header,
-  not a CAN ID).
-- The app's PID parser was written against STN frame layout; `ATMA` emits ELM-format frames.
-- Runtime permission grants and `foregroundServiceType` were not verified on a physical device.
-- The STN1110 (OBDLink LX) path may have regressed.

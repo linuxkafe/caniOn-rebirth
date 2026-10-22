@@ -8,19 +8,22 @@ This project provides patch notes and build instructions to make the original ca
 
 ## Features Restored / Added
 
-- **Bluetooth adapter compatibility**: Init sequence changed from STN1110-specific commands (`STM`, `STFCP`, `STFAP`) to standard ELM327 commands (`ATMA`, `ATFCSM`, `ATFCSH`) for wider adapter support.
-- **Android 13+ support**: Updated `targetSdkVersion` from 29 to 33 with required runtime permissions:
+- **Bluetooth adapter compatibility**: the live-monitor path used STN1110-only commands (`STM`, `STFCP`, `STFAP`). Replaced with standard ELM327 (`ATMA`, `ATCAF0`) so every ELM327-family adapter works — including the Vgate iCar Pro 2S.
+- **Android 13+ support**: `targetSdkVersion` 29 → 33, with the required runtime permissions:
   - `BLUETOOTH_CONNECT`
   - `BLUETOOTH_SCAN`
   - `FOREGROUND_SERVICE_CONNECTED_DEVICE`
   - `FOREGROUND_SERVICE_LOCATION`
-- Maintains original Leaf-specific CAN parsing and battery monitoring functionality.
+- **Open-source client**: a clean-room reimplementation of the Leaf CAN protocol in `app/`, with a
+  unit-tested pure-JVM core. See [`app/README.md`](app/README.md).
+- **Protocol specification**: [`docs/PROTOCOL.md`](docs/PROTOCOL.md) documents the frame format, the
+  full CAN identifier map, the scaling of every signal, and the odometer calibration.
 
 ## Prerequisites
 
-- Java 21+
+- Java 21+ (JDK 17+ for the app itself)
 - Apktool 2.11.0+
-- Android SDK build-tools for signing (apksigner, zipalign)
+- Android SDK build-tools for signing (`apksigner`, `zipalign`) — **not** bundled with apktool
 
 ## Build Instructions
 
@@ -36,8 +39,10 @@ This project provides patch notes and build instructions to make the original ca
    Or by hand:
    - `smali/emobility/canion/scanner.smali`:
      - `const-string v3, "STM"` → `const-string v3, "ATMA"`
-     - `const-string v3, "STFCP"` → `const-string v3, "ATFCSM"`
-     - `const-string v3, "STFAP` → `const-string v3, "ATFCSH`
+     - `const-string v3, "STMA"` → `const-string v3, "ATMA"`
+     - `const-string v3, "STFCP"` → `const-string v3, "ATCAF0"`
+     - `const-string v3, "STFAP ..."` → `const-string v3, "ATCAF0"` (drop the arguments —
+       `ATCAF0` takes none, and `ATCAF0 298, FFF` is a malformed command)
    - `apktool.yml`:
      ```yaml
      targetSdkVersion: 33
@@ -113,12 +118,21 @@ This project provides patch notes and build instructions to make the original ca
 
 This patch is a best-effort binary modification. The following are **unresolved**:
 
-- **Argument-domain mismatch.** `ATFCSH` on ELM327 takes a *header* (`7E8`), not a CAN ID, and has no mask argument. A literal `STFAP 298, FFF` → `ATFCSH 298, FFF` translation is therefore not faithful. The correct ELM sequence for filtering on a CAN ID is roughly `ATFCSH 7E8` + `ATFCSH 7E8, 7E0`, with ID-level selection via `ATCA`/`ATCM`.
-- **Frame format.** The app's Leaf PID parser was written against STN1110 monitor output. `ATMA` emits ELM-format frames, which may not parse identically.
-- **STN-emulating firmware.** Some Vgate units partially emulate the STN command set. The patch removes that path entirely.
-- **Regression risk on STN1110 adapters.** The OBDLink LX previously worked. `ATMA` is understood by the STN1110, but the `ATFCSM`/`ATFCSH` replacements are not semantically equivalent to `STFCP`/`STFAP` on that chip.
+- **Runtime Bluetooth permission.** `BLUETOOTH_CONNECT` is a *runtime* permission on Android 12+. The manifest declares it, but the app predates API 23 and has no `requestPermissions` call, so on Android 12+ it will need to be granted manually (or it will throw `SecurityException` at the socket). Check `adb logcat | grep -i security`.
+- **Foreground service type.** `<service android:name=".scanner"/>` has no `android:foregroundServiceType`, so the `FOREGROUND_SERVICE_*` permissions declared are currently unusable. On API 34+ a mismatch is a hard `SecurityException` in `startForeground()`.
+- **More Bluetooth traffic.** The STN filter list had no ELM327 equivalent (ELM's `ATCA` accepts one identifier at a time), so the patched build accepts every frame and filters in software. See `docs/PROTOCOL.md` §3.1.
+- **STN1110 regression risk.** The OBDLink LX previously worked. `ATMA` is understood by the STN1110, but the `ATCAF0` replacement is not semantically equivalent to `STFAP`/`STFCP` on that chip. Test the LX before recommending the patch to existing users.
+- **Data flow unverified.** The patched APK has never been run against a physical Vgate. The protocol *format* is confirmed correct — the original client's frame parser expects exactly the `ID + hex bytes` layout an ELM327 emits with `ATH1`/`ATS0` — but end-to-end data has not been observed.
 
-If data still does not flow, capture the raw RFCOMM exchange against the adapter and check the responses to `ATMA` / `ATFCSH` before changing anything else.
+## Open-Source Client
+
+`app/` contains a clean-room reimplementation of the Leaf CAN protocol:
+
+* `app/core` — pure-JVM protocol engine (frame splitter, signal decoder, ELM327 command sequence),
+  21 unit tests, no Android dependency.
+* `app/app` — a thin Android shell: Bluetooth SPP transport, runtime permissions, live readout.
+
+See [`app/README.md`](app/README.md) and [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
 
 ## Testing
 

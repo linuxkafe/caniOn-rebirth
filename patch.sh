@@ -16,7 +16,6 @@
 #
 # See README.md for the caveats around (1) — the command *names* are translated
 # but the *argument domain* is not, and that needs on-device verification.
-
 set -euo pipefail
 
 DECODED="${1:?usage: patch.sh <decoded-dir>}"
@@ -31,18 +30,35 @@ done
 changed=0
 
 # ---------------------------------------------------------------- 1. smali
+# The live-monitor path used STN1110-only commands. ELM327 has no way to
+# express a *list* of accepted CAN identifiers (ATCA takes exactly one), so
+# the filter list is replaced by ATCAF0 ("accept everything") and the client
+# dispatches on the CAN identifier itself, exactly as the original did.
 echo "==> Patching smali (STN1110 -> ELM327 monitor commands)"
-for pair in 'STM:ATMA' 'STFCP:ATFCSM' 'STFAP :ATFCSH'; do
+for pair in 'STM:ATMA' 'STMA:ATMA' 'STFCP:ATCAF0'; do
   old="${pair%%:*}"; new="${pair##*:}"
   n=$(grep -c "const-string v3, \"${old}\"" "$SMALI" || true)
   if [ "$n" -gt 0 ]; then
-    sed -i "s/const-string v3, \"${old}\"/const-string v3, \"${new}/g" "$SMALI"
+    sed -i "s/const-string v3, \"${old}\"/const-string v3, \"${new}\"/g" "$SMALI"
     echo "    ${old} -> ${new}  (${n} site(s))"
     changed=1
   else
     echo "    ${old} -> ${new}  (0 sites, already patched)"
   fi
 done
+# "STFAP 29A, FFF" and friends become "ATCAF0" -- the arguments are dropped,
+# because ATCAF0 takes none. Leaving them in place produces a malformed
+# command that some adapters answer with ERROR.
+n=$(grep -c 'const-string v3, "STFAP ' "$SMALI" || true)
+if [ "$n" -gt 0 ]; then
+  sed -i 's/const-string v3, "STFAP [^"]*"/const-string v3, "ATCAF0"/g' "$SMALI"
+  echo "    STFAP <id>, <mask> -> ATCAF0  (${n} site(s), arguments dropped)"
+  changed=1
+else
+  echo "    STFAP <id>, <mask> -> ATCAF0  (0 sites, already patched)"
+fi
+echo "    (note: the original ATFCSH761 / ATFCSD300000 / ATFCSM1 / ATSH761"
+echo "     commands are ELM327 already and are left untouched)"
 
 # ---------------------------------------------------------------- 2. sdk
 echo "==> Patching targetSdkVersion"
