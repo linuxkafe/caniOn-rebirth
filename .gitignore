@@ -1,4 +1,9 @@
-# Never commit proprietary binaries
+# ---------------------------------------------------------------------------
+# caniOn Rebirth — ignore rules
+# ---------------------------------------------------------------------------
+
+# The original caniOn APK and every patched build. These are not part of the
+# source: the original is proprietary and the builds are artefacts.
 *.apk
 *.aab
 *.dex
@@ -7,14 +12,23 @@
 *.jks
 *.p12
 
-# Decoded APK working dirs
-*decoded/
-*decoded*/
-canion-*/
-apktool.yml
+# The internal AES project (tickets, shadow docs, analysis). Local only —
+# it is a working notebook, not part of the published project.
+aes/
 
-# Local tooling
-.tools/
+# Local build output
+build/
+.gradle/
+local.properties
 
-# Decompiled reference (regenerate with tools/Dex2Java.java)
+# Tooling fetched by the scripts
+tools/kotlinc/
+tools/build-tools/
+tools/bt/
+
+# Decompiled reference material (produced by tools/Dex2Java.java).
+# Kept out of the repository: it is derived from a proprietary binary.
 reference/
+
+# Locally installed Android build-tools (apksigner, zipalign, aapt2)
+.tools/
