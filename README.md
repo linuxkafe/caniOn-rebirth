@@ -33,6 +33,10 @@ the SHA-256 against the value recorded in `PATCH-NOTES.md` before using it.
 Both scripts are self-contained: they fetch their own tooling and verify their
 own output. `build.sh` runs the unit tests as part of the build.
 
+See **[INSTALL.md](INSTALL.md)** for the install procedure, the expected file
+size and SHA-256, and what to do if the phone reports *"a problem occurred while
+analysing the package"*.
+
 ## What was wrong with the original
 
 | Problem | Cause | Fix |
