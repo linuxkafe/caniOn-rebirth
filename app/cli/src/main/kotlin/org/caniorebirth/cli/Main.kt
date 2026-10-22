@@ -72,6 +72,9 @@ object Main {
                 report(parser.signals(), started)
             }
         }
+        // Final report, so a short capture (or a replay from stdin) still
+        // shows what was decoded.
+        report(parser.signals(), started)
     }
 
     private fun report(s: LeafSignals, started: Long) {
