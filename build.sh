@@ -116,7 +116,7 @@ if [ -z "$STDLIB" ]; then
 fi
 CP="$BUILD/core:$BUILD/test:$TEST_LIBS/junit.jar:$TEST_LIBS/hamcrest.jar"
 [ -n "$STDLIB" ] && CP="$CP:$STDLIB"
-if command -v java >/dev/null 2>&1 && java -cp "$CP" org.junit.runner.JUnitCore org.caniorebirth.leaf.LeafProtocolTest; then
+if command -v java >/dev/null 2>&1 && java -cp "$CP" org.junit.runner.JUnitCore org.caniorebirth.zev.ZevProtocolTest; then
   ok "all tests passed"
 else
   die "tests failed"

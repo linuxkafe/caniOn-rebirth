@@ -1,9 +1,9 @@
 package org.caniorebirth.cli
 
-import org.caniorebirth.leaf.Elm327InitSequence
-import org.caniorebirth.leaf.FrameSplitter
-import org.caniorebirth.leaf.LeafCanParser
-import org.caniorebirth.leaf.LeafSignals
+import org.caniorebirth.zev.Elm327InitSequence
+import org.caniorebirth.zev.FrameSplitter
+import org.caniorebirth.zev.ZevCanParser
+import org.caniorebirth.zev.ZevSignals
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -11,7 +11,7 @@ import java.io.OutputStream
 import java.io.PrintStream
 
 /**
- * A command-line Leaf client.
+ * A command-line ZEV client.
  *
  * This exists so the protocol engine can be built, run and tested **without
  * the Android SDK and without the original APK** — only a JDK is required.
@@ -38,10 +38,10 @@ object Main {
         }
 
         val transport = openTransport(options)
-        val parser = LeafCanParser(odometerDivisor = options.odometerDivisor)
+        val parser = ZevCanParser(odometerDivisor = options.odometerDivisor)
         val splitter = FrameSplitter()
 
-        println("caniOn Rebirth — Leaf OBD client")
+        println("caniOn Rebirth — ZEV OBD client")
         println("adapter : ${options.describe()}")
         println("divisor : ${options.odometerDivisor}")
         println("sending the ELM327 bring-up sequence…")
@@ -77,7 +77,7 @@ object Main {
         report(parser.signals(), started)
     }
 
-    private fun report(s: LeafSignals, started: Long) {
+    private fun report(s: ZevSignals, started: Long) {
         val elapsed = (System.currentTimeMillis() - started) / 1000
         val soc = s.soc?.let { "%.0f%%".format(it) } ?: "  --  "
         val volt = s.packVoltage?.let { "%.1fV".format(it) } ?: "  --  "
@@ -108,7 +108,7 @@ object Main {
         val out: PrintStream = System.out
         out.println(
             """
-            caniOn Rebirth — Leaf OBD client
+            caniOn Rebirth — ZEV OBD client
 
             Usage:
               caniOn-cli --serial <device>     talk to an ELM327 over a serial port
@@ -230,7 +230,7 @@ object Main {
                 var serial: String? = null
                 var tcp: String? = null
                 var stdin = false
-                var divisor = LeafCanParser.DEFAULT_ODOMETER_DIVISOR
+                var divisor = ZevCanParser.DEFAULT_ODOMETER_DIVISOR
                 var report = 1000L
                 var delay = 250L
                 var help = false

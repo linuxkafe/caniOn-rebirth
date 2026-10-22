@@ -1,10 +1,10 @@
 # caniOn Rebirth
 
-Community maintenance fork of **caniOn** — an Android OBD-II app for Nissan Leaf battery monitoring and diagnostics.
+Community maintenance fork of **caniOn** — an Android OBD-II app for the **Mitsubishi i-MiEV**, **Peugeot iOn** and **Citroën C-Zero**.
 
 Two things live here:
 
-1. **An open-source client.** A clean-room reimplementation of the Leaf CAN protocol
+1. **An open-source client.** A clean-room reimplementation of the ZEV CAN protocol
    (`app/`), buildable from this repository alone — no original APK required.
 2. **A patch script.** One command turns the original caniOn v152 APK into a
    patched one that speaks standard ELM327 and installs on modern Android.
@@ -69,7 +69,7 @@ makes a future SDK bump safe.
 
 | Module | What it is | Needs Android? |
 |--------|-----------|-----------------|
-| `app/core` | The protocol engine: frame splitter, Leaf signal decoder, ELM327 command sequence, transport-agnostic client | **No** — pure JVM, 21 unit tests |
+| `app/core` | The protocol engine: frame splitter, ZEV signal decoder, ELM327 command sequence, transport-agnostic client | **No** — pure JVM, 21 unit tests |
 | `app/cli` | A command-line client for a serial port, a TCP bridge or stdin | **No** — pure JVM |
 | `app/app` | The Android application: Bluetooth SPP transport, runtime permissions, live readout | Yes |
 
@@ -94,7 +94,7 @@ release-gate.sh       verify a patched APK before shipping it
 app/core/             protocol engine (pure JVM)
 app/cli/              command-line client (pure JVM)
 app/app/              Android application
-docs/PROTOCOL.md      the Leaf CAN protocol specification
+docs/PROTOCOL.md      the ZEV CAN protocol specification
 PATCH-NOTES.md        what each patch changes and why
 tools/Dex2Java.java   the jadx driver used to produce the reference decompile
 ```

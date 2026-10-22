@@ -1,4 +1,4 @@
-// caniOn Rebirth — open-source Nissan Leaf OBD client.
+// caniOn Rebirth — open-source ZEV OBD client.
 //
 // Two modules:
 //   :core  — pure JVM protocol engine (no Android dependency, unit tested)

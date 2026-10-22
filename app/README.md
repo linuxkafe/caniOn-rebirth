@@ -1,24 +1,32 @@
 # caniOn Rebirth — Open-Source Client
 
-An open-source Android OBD client for the Nissan Leaf, rebuilt from the
-behaviour of the original `caniOn` app.
+An open-source Android OBD client for the **Mitsubishi i-MiEV**, **Peugeot iOn** and
+**Citroën C-Zero**, rebuilt from the behaviour of the original `caniOn` app.
 
 The project has two modules:
 
 | Module | What it is | Depends on Android? |
 |--------|-----------|---------------------|
-| `core` | The protocol engine: frame splitter, Leaf signal decoder, ELM327 command sequence, transport-agnostic client | **No** — pure JVM, unit tested |
+| `core` | The protocol engine: frame splitter, ZEV signal decoder, ELM327 command sequence, transport-agnostic client | **No** — pure JVM, unit tested |
 | `app` | A thin Android shell: Bluetooth SPP transport, runtime permissions, a live readout | Yes |
 
 The split is deliberate: everything that encodes *knowledge about the car* lives
 in `core` and is testable without a phone or an adapter.
+
+## The cars
+
+The i-MiEV, the iOn and the C-Zero are rebadged versions of the same
+Mitsubishi ZEV, so they share one CAN bus. The app is aware of the differences
+between pack and heater generations — its help text distinguishes "early
+Mitsubishi i-MiEVs (2011 and before)", which need the special heater-temperature
+coding, from later cars.
 
 ## Status
 
 | Component | State |
 |-----------|-------|
 | Frame splitter (`FrameSplitter`) | implemented, unit tested |
-| Leaf signal decoder (`LeafCanParser`) | implemented, unit tested — 21 tests green |
+| ZEV signal decoder (`ZevCanParser`) | implemented, unit tested — 21 tests green |
 | ELM327 command sequence (`Elm327InitSequence`) | implemented, unit tested |
 | Transport-agnostic client (`ObdClient`) | implemented |
 | Bluetooth SPP transport | implemented, **not yet tested on a device** |
@@ -49,7 +57,11 @@ cd app
 ./gradlew :core:test
 ```
 
-The `app` module needs the Android SDK (compileSdk 34) and a JDK 17+.
+Or, without Gradle and without the Android SDK:
+
+```bash
+./build.sh
+```
 
 ## Using it
 

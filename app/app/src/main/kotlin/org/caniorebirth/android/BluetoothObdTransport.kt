@@ -6,7 +6,7 @@ import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresPermission
-import org.caniorebirth.leaf.ObdClient
+import org.caniorebirth.zev.ObdClient
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream

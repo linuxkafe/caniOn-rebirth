@@ -1,7 +1,7 @@
-package org.caniorebirth.leaf
+package org.caniorebirth.zev
 
 /**
- * Decodes Nissan Leaf CAN frames into [LeafSignals].
+ * Decodes ZEV CAN frames into [ZevSignals].
  *
  * The parser is a faithful re-implementation of the behaviour observed in the
  * caniOn v152 client (see `docs/PROTOCOL.md`). It is stateless with respect
@@ -29,8 +29,8 @@ package org.caniorebirth.leaf
  * | 0x6FA | VIN fragment (part 1)            |
  * | 0x762 | amp-hours                        |
  */
-class LeafCanParser(
-    /** Odometer divisor. The observed default for the Leaf is 57.75. */
+class ZevCanParser(
+    /** Odometer divisor. The observed default for this car is 57.75. */
     private val odometerDivisor: Double = DEFAULT_ODOMETER_DIVISOR,
     /** True when the vehicle reports temperatures in °F. */
     private val useFahrenheit: Boolean = false,
@@ -78,7 +78,7 @@ class LeafCanParser(
     // ---- public API ----------------------------------------------------
 
     /** Feed one frame. Returns the signals as they stand after the update. */
-    fun accept(frame: CanFrame): LeafSignals {
+    fun accept(frame: CanFrame): ZevSignals {
         when (frame.id) {
             ID_CHARGE_POWER_FACTOR -> if (frame.size == SHORT) {
                 chargePowerFactor = (frame.u(2) * 0.4).toInt()
@@ -150,7 +150,7 @@ class LeafCanParser(
     }
 
     /** Current state of every signal. */
-    fun signals(): LeafSignals = LeafSignals(
+    fun signals(): ZevSignals = ZevSignals(
         motorRpm = motorRpm,
         packCurrent = packCurrent,
         packVoltage = packVoltage,

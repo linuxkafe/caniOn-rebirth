@@ -1,8 +1,8 @@
-package org.caniorebirth.leaf
+package org.caniorebirth.zev
 
 /**
  * The command sequence an ELM327 adapter needs before it will stream the
- * Leaf CAN bus.
+ * ZEV CAN bus.
  *
  * The sequence is deliberately **ELM327-only**. The original client mixed
  * STN1110 commands (`STFCP`, `STFAP`, `STM`) into the live path, which
@@ -19,7 +19,7 @@ object Elm327InitSequence {
      * The live-monitor command set.
      *
      * `ATCAF0` resets the CAN acceptance filter to "accept everything" and
-     * `ATMA` starts the monitor. The Leaf client dispatches on the CAN
+     * `ATMA` starts the monitor. The ZEV client dispatches on the CAN
      * identifier anyway, so hardware-side filtering is an optimisation, not a
      * requirement — and ELM327 cannot express the original multi-identifier
      * `STFAP` list in a single command.
@@ -33,7 +33,7 @@ object Elm327InitSequence {
      * The full bring-up sequence, in order.
      *
      * Steps 1–8 configure the adapter; steps 9–12 request the 0x761 cell
-     * report (the Leaf's cell voltage/temperature request); steps 13+ enter
+     * report (the ZEV's cell voltage/temperature request); steps 13+ enter
      * the live monitor.
      */
     val FULL: List<String> = listOf(

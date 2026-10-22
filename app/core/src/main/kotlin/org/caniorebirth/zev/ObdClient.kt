@@ -1,4 +1,4 @@
-package org.caniorebirth.leaf
+package org.caniorebirth.zev
 
 /**
  * A transport-agnostic OBD client: it owns the command sequence and the
@@ -9,11 +9,11 @@ package org.caniorebirth.leaf
  */
 class ObdClient(
     private val transport: Transport,
-    private val parser: LeafCanParser = LeafCanParser(),
+    private val parser: ZevCanParser = ZevCanParser(),
 ) {
 
     /** Signals observed so far. */
-    val signals: LeafSignals get() = parser.signals()
+    val signals: ZevSignals get() = parser.signals()
 
     /** Raised when the adapter answers a command with an error or `ERROR`. */
     var onAdapterError: ((String) -> Unit)? = null

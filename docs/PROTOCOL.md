@@ -1,4 +1,4 @@
-# Nissan Leaf CAN Protocol — Clean-Room Specification
+# Mitsubishi i-MiEV / Peugeot iOn / Citroën C-Zero CAN Protocol — Clean-Room Specification
 
 > Extracted by static analysis of the caniOn v152 APK (SHA-256
 > `c244880cb986d4fd7b4469f3798ca4617bad70b3ad2107add966a3f3de366fbe`) using
@@ -6,10 +6,23 @@
 > **specification written from observed behaviour**, not a copy of source code.
 > The original caniOn project is by Emobility and remains their property.
 >
-> The Leaf CAN bus layout (IDs, scaling) is a well-documented part of the
-> Nissan/ZE0 EV platform and is independently documented in the EV community
-> (e.g. the "Leaf CAN bus" reverse-engineering write-ups). This document
-> describes *how this particular client consumes it*.
+> ## Which cars
+>
+> The i-MiEV, the iOn and the C-Zero are rebadged versions of the same
+> Mitsubishi ZEV and share one CAN bus. The app targets that family, and its
+> own help text says so:
+>
+> > *"…heater temp on can-bus is special coded on early Mitsubishi i-MiEVs
+> > (2011 and before). So please activate this option on early Mitsubishi
+> > i-MiEVs to get feasable results for heater temp."*
+>
+> Two further independent signals confirm the car: the app distinguishes
+> **heater generation 1** (the early i-MiEV PTC heater) from later cars, and
+> its default energy-consumption figure is **125 Wh/mi** — the characteristic
+> figure for the i-MiEV family. The Nissan Leaf, a different car on a
+> different bus, consumes roughly 30 Wh/mi.
+>
+> This document describes *how this particular client consumes the bus*.
 
 ---
 
@@ -17,11 +30,11 @@
 
 | Property | Value |
 |----------|-------|
-| Bus | Nissan Leaf CAN, 500 kbit/s, ISO 15765-4, 11-bit identifiers |
+| Bus | Mitsubishi ZEV CAN, 500 kbit/s, ISO 15765-4, 11-bit identifiers |
 | Adapter | Any ELM327-compatible Bluetooth SPP adapter (e.g. Vgate iCar Pro 2S) |
 | ELM327 protocol selector | `ATSP6` — CAN 11-bit ID, 500 kbit/s |
 
-The Leaf uses **11-bit** CAN identifiers, so every identifier in this document
+The bus uses **11-bit** CAN identifiers, so every identifier in this document
 fits in three hex characters (`0x000`–`0x7FF`).
 
 ---
@@ -244,7 +257,7 @@ In 96-cell mode, groups 6 and 12 are known to be spurious and are zeroed.
 2. **The frame parser is dialect-independent** as long as the adapter emits
    `ID + hex bytes` with headers on and spaces off.
 3. **The interesting part of the app is not the OBD plumbing** — it is the
-   Leaf-specific signal interpretation, energy accounting, odometer
+   car-specific signal interpretation, energy accounting, odometer
    calibration, trip logging and the Bluetooth/UI plumbing around it. That is
    where an open-source re-implementation adds the most value.
 4. The original app also stores data in SQLite tables: `PREFERENCE`,

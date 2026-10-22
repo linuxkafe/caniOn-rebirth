@@ -1,12 +1,12 @@
-package org.caniorebirth.leaf
+package org.caniorebirth.zev
 
 /**
- * The signals this client extracts from the Leaf CAN bus.
+ * The signals this client extracts from the ZEV CAN bus.
  *
  * Every field is nullable: a signal is only present once a frame carrying it
  * has been seen. Units are SI unless stated otherwise.
  */
-data class LeafSignals(
+data class ZevSignals(
     // --- 0x298 ---------------------------------------------------------
     val motorRpm: Int? = null,
 

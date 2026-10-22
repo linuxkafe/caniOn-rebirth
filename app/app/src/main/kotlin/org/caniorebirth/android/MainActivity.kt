@@ -6,13 +6,13 @@ import android.os.Bundle
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import org.caniorebirth.leaf.LeafCanParser
-import org.caniorebirth.leaf.LeafSignals
-import org.caniorebirth.leaf.ObdClient
+import org.caniorebirth.zev.ZevCanParser
+import org.caniorebirth.zev.ZevSignals
+import org.caniorebirth.zev.ObdClient
 
 /**
  * Minimal host activity: connect to a paired adapter and display the live
- * Leaf signals.
+ * ZEV signals.
  *
  * The heavy lifting is in `core`; this class only wires the Android
  * Bluetooth stack to it and shows the result.
@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
 
     private var client: ObdClient? = null
     private var transport: BluetoothObdTransport? = null
-    private val parser = LeafCanParser()
+    private val parser = ZevCanParser()
 
     private val requestPermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    private fun describe(s: LeafSignals): String = buildString {
+    private fun describe(s: ZevSignals): String = buildString {
         appendLine("SOC      : ${s.soc?.let { "%.0f %%".format(it) } ?: "--"}")
         appendLine("Pack V   : ${s.packVoltage?.let { "%.1f V".format(it) } ?: "--"}")
         appendLine("Pack A   : ${s.packCurrent?.let { "%.1f A".format(it) } ?: "--"}")
