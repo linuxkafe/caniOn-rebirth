@@ -41,6 +41,13 @@ KEY_ALIAS="${KEY_ALIAS:-canion}"
 STORE_PASS="${STORE_PASS:-canion-rebirth}"
 
 # --------------------------------------------------------------- toolchain
+fetch() {
+  local url="$1" out="$2"
+  if command -v curl >/dev/null 2>&1; then curl -fsSL "$url" -o "$out"
+  elif command -v wget >/dev/null 2>&1; then wget -q "$url" -O "$out"
+  else die "no curl or wget available to download the tooling"; fi
+}
+
 find_apktool() {
   if [ -n "${APKTOOL_JAR:-}" ] && [ -f "$APKTOOL_JAR" ]; then echo "$APKTOOL_JAR"; return; fi
   if command -v apktool >/dev/null 2>&1; then echo "apktool"; return; fi
@@ -53,17 +60,39 @@ find_apktool() {
 find_build_tools() {
   if [ -n "${BUILD_TOOLS_DIR:-}" ] && [ -x "$BUILD_TOOLS_DIR/apksigner" ]; then echo "$BUILD_TOOLS_DIR"; return; fi
   for d in "$ANDROID_HOME"/build-tools/* "$ANDROID_SDK_ROOT"/build-tools/* \
-           "$HOME/Android/Sdk/build-tools"/* /opt/android-sdk/build-tools/*; do
+           "$HOME/Android/Sdk/build-tools"/* /opt/android-sdk/build-tools/* \
+           "$ROOT/tools/build-tools"; do
     [ -x "$d/apksigner" ] && { echo "$d"; return; }
   done
   return 1
 }
 
-APKTOOL="$(find_apktool || true)"
-[ -n "$APKTOOL" ] || die "apktool not found. Set APKTOOL_JAR=/path/to/apktool.jar or put apktool on PATH."
-BUILD_TOOLS="$(find_build_tools || true)"
-[ -n "$BUILD_TOOLS" ] || die "apksigner/zipalign not found. Set BUILD_TOOLS_DIR=/path/to/android-sdk/build-tools/<version>."
 command -v java >/dev/null 2>&1 || die "java not found — install a JDK 17+"
+
+APKTOOL="$(find_apktool || true)"
+if [ -z "$APKTOOL" ]; then
+  say "downloading apktool 2.11.0"
+  mkdir -p "$ROOT/tools"
+  fetch "https://github.com/iBotPeaches/Apktool/releases/download/v2.11.0/apktool_2.11.0.jar" \
+        "$ROOT/tools/apktool.jar"
+  APKTOOL="$ROOT/tools/apktool.jar"
+fi
+
+BUILD_TOOLS="$(find_build_tools || true)"
+if [ -z "$BUILD_TOOLS" ]; then
+  say "downloading the Android build-tools (apksigner, zipalign)"
+  mkdir -p "$ROOT/tools"
+  fetch "https://dl.google.com/android/repository/build-tools_r33.0.2-linux.zip" \
+        "$ROOT/tools/build-tools.zip"
+  rm -rf "$ROOT/tools/build-tools" "$ROOT/tools/bt"
+  mkdir -p "$ROOT/tools/bt"
+  unzip -q "$ROOT/tools/build-tools.zip" -d "$ROOT/tools/bt"
+  rm -f "$ROOT/tools/build-tools.zip"
+  FOUND="$(find "$ROOT/tools/bt" -name apksigner -type f | head -1)"
+  [ -n "$FOUND" ] || die "build-tools did not contain apksigner"
+  BUILD_TOOLS="$(dirname "$FOUND")"
+  chmod +x "$BUILD_TOOLS/apksigner" "$BUILD_TOOLS/zipalign" 2>/dev/null || true
+fi
 
 say "apktool    : $APKTOOL"
 say "build-tools: $BUILD_TOOLS"
