@@ -31,6 +31,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnConnect: android.widget.Button
     private lateinit var cellGrid: CellGridView
     private lateinit var cellTempGrid: CellGridView
+    private lateinit var tabLayout: com.google.android.material.tabs.TabLayout
+    private lateinit var sectionDashboard: android.widget.LinearLayout
+    private lateinit var sectionCells: android.widget.LinearLayout
+    private lateinit var sectionHeater: android.widget.LinearLayout
+    private lateinit var sectionVehicle: android.widget.LinearLayout
+    private lateinit var sectionMap: android.widget.LinearLayout
+    private lateinit var tvHeater: android.widget.TextView
+    private lateinit var tvVehicle: android.widget.TextView
     private lateinit var chartSoc: SignalChartView
     private lateinit var chartVolt: SignalChartView
     private lateinit var chartCurr: SignalChartView
@@ -71,6 +79,27 @@ class MainActivity : AppCompatActivity() {
         readout = findViewById(R.id.tvReadout)
         errorsView = findViewById(R.id.tvErrors)
         btnConnect = findViewById(R.id.btnConnect)
+        tabLayout = findViewById(R.id.tabLayout)
+        sectionDashboard = findViewById(R.id.sectionDashboard)
+        sectionCells = findViewById(R.id.sectionCells)
+        sectionHeater = findViewById(R.id.sectionHeater)
+        sectionVehicle = findViewById(R.id.sectionVehicle)
+        sectionMap = findViewById(R.id.sectionMap)
+        tvHeater = findViewById(R.id.tvHeater)
+        tvVehicle = findViewById(R.id.tvVehicle)
+        tabLayout.addTab(tabLayout.newTab().setText("Dashboard"))
+        tabLayout.addTab(tabLayout.newTab().setText("Cells"))
+        tabLayout.addTab(tabLayout.newTab().setText("Heater"))
+        tabLayout.addTab(tabLayout.newTab().setText("Vehicle"))
+        tabLayout.addTab(tabLayout.newTab().setText("Map"))
+        tabLayout.addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab?) {
+                showSection(tab?.position ?: 0)
+            }
+            override fun onTabUnselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
+            override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
+        })
+        showSection(0)
         btnConnect.setOnClickListener {
             val needed = permissions()
             val missing = needed.filter { checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
@@ -121,6 +150,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showSection(pos: Int) {
+        sectionDashboard.visibility = if (pos == 0) android.view.View.VISIBLE else android.view.View.GONE
+        sectionCells.visibility = if (pos == 1) android.view.View.VISIBLE else android.view.View.GONE
+        sectionHeater.visibility = if (pos == 2) android.view.View.VISIBLE else android.view.View.GONE
+        sectionVehicle.visibility = if (pos == 3) android.view.View.VISIBLE else android.view.View.GONE
+        sectionMap.visibility = if (pos == 4) android.view.View.VISIBLE else android.view.View.GONE
+    }
+
     private fun connect() {
         val adapters = BluetoothObdTransport.candidateAdapters(this)
         if (adapters.isEmpty()) {
@@ -156,6 +193,24 @@ class MainActivity : AppCompatActivity() {
             cellGrid.setVoltages(sig.cellVoltages)
             cellGrid.setTemperatures(sig.cellTemperatures.map { it?.toDouble() })
             cellTempGrid.setVoltages(sig.cellTemperatures.map { it?.toDouble() })
+            tvHeater.text = buildString {
+                appendLine("Heater return: ${sig.heaterReturnTempC?.let { "%.1f C".format(it) } ?: "--"}")
+                appendLine("Heater flow  : ${sig.heaterFlowTempC?.let { "%.1f C".format(it) } ?: "--"}")
+                appendLine("Heater curr  : ${sig.heaterCurrent?.let { "%.1f A".format(it) } ?: "--"}")
+                appendLine("Heater power : ${sig.heaterPower?.let { "%.0f W".format(it) } ?: "--"}")
+                appendLine("AC current   : ${sig.acCurrent?.let { "%.1f A".format(it) } ?: "--"}")
+                appendLine("AC power     : ${sig.acPower?.let { "%.0f W".format(it) } ?: "--"}")
+            }
+            tvVehicle.text = buildString {
+                appendLine("VIN          : ${sig.vin ?: "--"}")
+                appendLine("Odometer     : ${sig.odometerMiles ?: "--"} mi (raw ${sig.odometerRaw ?: "--"})")
+                appendLine("Gear         : ${sig.gear ?: "--"}")
+                appendLine("RPM          : ${sig.motorRpm ?: "--"}")
+                appendLine("Ah           : ${sig.ampHours?.let { "%.1f".format(it) } ?: "--"}")
+                appendLine("Charging     : ${sig.chargingFlag ?: "--"}")
+                appendLine("Pack         : ${if (sig.is96CellPack == true) "96-cell" else "24-cell"}")
+                appendLine("Cells known  : ${sig.cellVoltages.count { it != null }}")
+            }
             sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0) }
             sig.packVoltage?.let { voltHistory.add(it.toFloat()); if (voltHistory.size > maxHistory) voltHistory.removeAt(0) }
             sig.packCurrent?.let { currHistory.add(it.toFloat()); if (currHistory.size > maxHistory) currHistory.removeAt(0) }
