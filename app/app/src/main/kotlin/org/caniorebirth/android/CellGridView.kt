@@ -12,9 +12,14 @@ import android.view.View
  * Draws the 96 cell voltages as a coloured grid (8 columns x 12 rows).
  * Colour scale: red (low) -> yellow -> green (high). Null cells are grey.
  */
+enum class CellGridMode { VOLTAGE, TEMPERATURE }
+
 class CellGridView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
+
+    var mode: CellGridMode = CellGridMode.VOLTAGE
+        set(value) { field = value; invalidate() }
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -48,20 +53,33 @@ class CellGridView @JvmOverloads constructor(
             paint.color = colorFor(v)
             canvas.drawRoundRect(RectF(x, y, x + w, y + h), 6f, 6f, paint)
             if (v != null) {
-                val label = "%.2f".format(v)
+                val label = when (mode) {
+                    CellGridMode.VOLTAGE -> "%.2f".format(v)
+                    CellGridMode.TEMPERATURE -> "%.0f".format(v)
+                }
                 canvas.drawText(label, x + w / 2f, y + h / 2f + 8f, textPaint)
             }
         }
     }
 
     private fun colorFor(v: Double?): Int {
-        if (v == null || v <= 0.0) return Color.parseColor("#424242")
-        // typical cell range 3.0 .. 4.2 V
-        val t = ((v - 3.0) / (4.2 - 3.0)).coerceIn(0.0, 1.0)
-        // red (low) -> yellow -> green (high)
-        val r = (255 * (1 - t)).toInt()
-        val g = (200 * t + 55).toInt().coerceAtMost(255)
-        val b = 40
-        return Color.rgb(r, g, b)
+        if (v == null) return Color.parseColor("#424242")
+        return when (mode) {
+            CellGridMode.VOLTAGE -> {
+                if (v <= 0.0) return Color.parseColor("#424242")
+                val t = ((v - 3.0) / (4.2 - 3.0)).coerceIn(0.0, 1.0)
+                val r = (255 * (1 - t)).toInt()
+                val g = (200 * t + 55).toInt().coerceAtMost(255)
+                Color.rgb(r, g, 40)
+            }
+            CellGridMode.TEMPERATURE -> {
+                // blue (cold) -> green -> red (hot), range -20..60 C
+                val t = ((v + 20.0) / 80.0).coerceIn(0.0, 1.0)
+                val r = (255 * t).toInt()
+                val g = (200 * (1 - kotlin.math.abs(t - 0.5) * 2) + 55).toInt().coerceAtMost(255)
+                val b = (255 * (1 - t)).toInt()
+                Color.rgb(r, g, b)
+            }
+        }
     }
 }

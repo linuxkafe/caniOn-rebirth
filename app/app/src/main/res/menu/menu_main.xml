@@ -11,4 +11,8 @@
         android:title="Settings"
         android:icon="@android:drawable/ic_menu_preferences"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_export"
+        android:title="Export CSV"
+        app:showAsAction="never" />
 </menu>

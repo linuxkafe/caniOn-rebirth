@@ -3,6 +3,9 @@ package org.caniorebirth.android
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -25,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var readout: TextView
     private lateinit var errorsView: TextView
     private lateinit var cellGrid: CellGridView
+    private lateinit var cellTempGrid: CellGridView
     private lateinit var chartSoc: SignalChartView
     private lateinit var chartVolt: SignalChartView
     private lateinit var chartCurr: SignalChartView
@@ -37,6 +41,10 @@ class MainActivity : AppCompatActivity() {
     private var client: ObdClient? = null
     private var transport: BluetoothObdTransport? = null
     private val parser = ZevCanParser()
+    private var locationManager: LocationManager? = null
+    private val locationListener = LocationListener { loc ->
+        (supportFragmentManager.findFragmentById(R.id.map) as? MapFragment)?.updatePosition(loc.latitude, loc.longitude)
+    }
 
     private val requestPermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
@@ -56,7 +64,10 @@ class MainActivity : AppCompatActivity() {
         status = findViewById(R.id.tvStatus)
         readout = findViewById(R.id.tvReadout)
         errorsView = findViewById(R.id.tvErrors)
+        startLocationTracking()
         cellGrid = findViewById(R.id.cellGrid)
+        cellTempGrid = findViewById(R.id.cellTempGrid)
+        cellTempGrid.mode = CellGridMode.TEMPERATURE
         chartSoc = findViewById(R.id.chartSoc)
         chartVolt = findViewById(R.id.chartVolt)
         chartCurr = findViewById(R.id.chartCurr)
@@ -73,6 +84,21 @@ class MainActivity : AppCompatActivity() {
             add(Manifest.permission.BLUETOOTH_ADMIN)
         }
         add(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+    private fun startLocationTracking() {
+        try {
+            locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+            val lm = locationManager ?: return
+            if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 5f, locationListener)
+                lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000L, 10f, locationListener)
+                lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let { locationListener.onLocationChanged(it) }
+                    ?: lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)?.let { locationListener.onLocationChanged(it) }
+            }
+        } catch (e: Exception) {
+            Log.w("Location", "location tracking unavailable", e)
+        }
     }
 
     private fun connect() {
@@ -94,6 +120,7 @@ class MainActivity : AppCompatActivity() {
             updateErrorsView(parser.getCurrentErrors())
             val sig = parser.signals()
             cellGrid.setVoltages(sig.cellVoltages)
+            cellTempGrid.setVoltages(sig.cellTemperatures.map { it?.toDouble() })
             sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0) }
             sig.packVoltage?.let { voltHistory.add(it.toFloat()); if (voltHistory.size > maxHistory) voltHistory.removeAt(0) }
             sig.packCurrent?.let { currHistory.add(it.toFloat()); if (currHistory.size > maxHistory) currHistory.removeAt(0) }
@@ -159,24 +186,56 @@ class MainActivity : AppCompatActivity() {
             startActivity(android.content.Intent(this, SettingsActivity::class.java))
             true
         }
+        R.id.action_export -> {
+            exportCsv()
+            true
+        }
         else -> super.onOptionsItemSelected(item)
     }
 
     override fun onDestroy() {
+        try { locationManager?.removeUpdates(locationListener) } catch (_: Exception) {}
         client?.stop()
         super.onDestroy()
     }
 
-    private fun describe(s: ZevSignals): String = buildString {
+    private fun exportCsv() {
+        try {
+            val dir = getExternalFilesDir(null) ?: filesDir
+            val f = java.io.File(dir, "canion_export.csv")
+            f.bufferedWriter().use { w ->
+                w.write("index,soc,packVoltage,packCurrent\n")
+                val n = maxOf(socHistory.size, voltHistory.size, currHistory.size)
+                for (i in 0 until n) {
+                    val soc = socHistory.getOrElse(i) { Float.NaN }
+                    val v = voltHistory.getOrElse(i) { Float.NaN }
+                    val c = currHistory.getOrElse(i) { Float.NaN }
+                    w.write("$i,$soc,$v,$c\n")
+                }
+            }
+            android.widget.Toast.makeText(this, "Exported to ${f.absolutePath}", android.widget.Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(this, "Export failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun describe(s: ZevSignals): String {
+        val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
+        val useF = prefs.getBoolean("use_fahrenheit", false)
+        val useKm = prefs.getBoolean("use_kilometers", false)
+        fun c2u(c: Double?): String? = c?.let { if (useF) "%.1f F".format(it * 9.0 / 5.0 + 32.0) else "%.1f C".format(it) }
+        return buildString {
         appendLine("SOC      : ${s.soc?.let { "%.0f %%".format(it) } ?: "--"}")
         appendLine("Pack V   : ${s.packVoltage?.let { "%.1f V".format(it) } ?: "--"}")
         appendLine("Pack A   : ${s.packCurrent?.let { "%.1f A".format(it) } ?: "--"}")
         appendLine("Pack W   : ${s.packPower?.let { "%.0f W".format(it) } ?: "--"}")
         appendLine("RPM      : ${s.motorRpm ?: "--"}")
         appendLine("Gear     : ${s.gear ?: "--"}")
-        appendLine("Odo      : ${s.odometerMiles ?: "--"} mi")
+        val odo = s.odometerMiles?.let { if (useKm) "%.0f km".format(it * 1.60934) else "$it mi" } ?: "--"
+        appendLine("Odo      : $odo")
         appendLine("Ah       : ${s.ampHours?.let { "%.1f Ah".format(it) } ?: "--"}")
         appendLine("VIN      : ${s.vin ?: "--"}")
+        appendLine("Heater   : ${c2u(s.heaterReturnTempC) ?: "--"} (ret) ${c2u(s.heaterFlowTempC) ?: "--"} (flow)")
         val cells = s.cellVoltages.filterNotNull()
         val minV = cells.minOrNull()
         val maxV = cells.maxOrNull()
@@ -185,5 +244,7 @@ class MainActivity : AppCompatActivity() {
         if (cells.isNotEmpty()) {
             appendLine("Cell V   : min ${"%.3f".format(minV)} max ${"%.3f".format(maxV)} avg ${"%.3f".format(avgV)} V")
         }
+        }
     }
+
 }

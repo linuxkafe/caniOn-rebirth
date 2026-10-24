@@ -51,6 +51,18 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="Cell temperatures (C)"
+            android:textStyle="bold" />
+
+        <org.caniorebirth.android.CellGridView
+            android:id="@+id/cellTempGrid"
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="SOC %"
             android:textStyle="bold" />
 
