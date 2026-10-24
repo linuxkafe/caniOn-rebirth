@@ -7,8 +7,12 @@ import android.widget.EditText
 import android.widget.Switch
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 
 class SettingsActivity : AppCompatActivity() {
+    private fun applyNightMode(dark: Boolean) {
+        AppCompatDelegate.setDefaultNightMode(if (dark) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO)
+    }
 
     private lateinit var prefs: SharedPreferences
 
@@ -23,6 +27,7 @@ class SettingsActivity : AppCompatActivity() {
         val etVehicleId = findViewById<EditText>(R.id.etVehicleId)
         val swFahrenheit = findViewById<Switch>(R.id.swFahrenheit)
         val swKilometers = findViewById<Switch>(R.id.swKilometers)
+        val swDarkMode = findViewById<Switch>(R.id.swDarkMode)
         val btnSave = findViewById<Button>(R.id.btnSave)
 
         etVeilHost.setText(prefs.getString("veil_host", "10.0.2.2"))
@@ -30,6 +35,7 @@ class SettingsActivity : AppCompatActivity() {
         etVehicleId.setText(prefs.getString("vehicle_id", "VEHICLE_001"))
         swFahrenheit.isChecked = prefs.getBoolean("use_fahrenheit", false)
         swKilometers.isChecked = prefs.getBoolean("use_kilometers", false)
+        swDarkMode.isChecked = prefs.getBoolean("dark_mode", false)
 
         btnSave.setOnClickListener {
             prefs.edit()
@@ -38,7 +44,9 @@ class SettingsActivity : AppCompatActivity() {
                 .putString("vehicle_id", etVehicleId.text.toString().trim())
                 .putBoolean("use_fahrenheit", swFahrenheit.isChecked)
                 .putBoolean("use_kilometers", swKilometers.isChecked)
+                .putBoolean("dark_mode", swDarkMode.isChecked)
                 .apply()
+            applyNightMode(swDarkMode.isChecked)
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
             finish()
         }

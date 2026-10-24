@@ -61,6 +61,12 @@
             android:layout_height="wrap_content"
             android:text="Distance in kilometers" />
 
+        <Switch
+            android:id="@+id/swDarkMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dark mode" />
+
         <Button
             android:id="@+id/btnSave"
             android:text="Save"
