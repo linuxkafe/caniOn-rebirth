@@ -37,7 +37,7 @@ class SettingsActivity : AppCompatActivity() {
         val btnSave = findViewById<Button>(R.id.btnSave)
 
         etVeilHost.setText(prefs.getString("veil_host", "10.0.2.2"))
-        etVeilPort.setText(prefs.getString("veil_port", "8080"))
+        etVeilPort.setText(prefs.getString("veil_port", "8100"))
         etVehicleId.setText(prefs.getString("vehicle_id", "VEHICLE_001"))
         swFahrenheit.isChecked = prefs.getBoolean("use_fahrenheit", false)
         swKilometers.isChecked = prefs.getBoolean("use_kilometers", false)

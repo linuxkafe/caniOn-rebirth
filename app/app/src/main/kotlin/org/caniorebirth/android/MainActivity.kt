@@ -259,7 +259,7 @@ class MainActivity : AppCompatActivity() {
         val c = ObdClient(t, parser)
         client = c
         t.onBytes = { bytes -> c.onBytes(bytes) }
-        t.onError = { e -> runOnUiThread { status.text = "Bluetooth error: ${e.message}" } }
+        t.onError = { e -> runOnUiThread { status.text = "Bluetooth error: ${e.message}" }; sendAppError("BluetoothObdTransport", e.message ?: "unknown", e.stackTraceToString()) }
         c.onAdapterError = { line -> runOnUiThread { status.text = "Adapter said: $line" } }
         c.onFrame = { frame ->
             runOnUiThread {
@@ -349,7 +349,7 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val host = prefs.getString("veil_host", "10.0.2.2")
-                val port = prefs.getString("veil_port", "8080")
+                val port = prefs.getString("veil_port", "8100")
                 val vehicleId = prefs.getString("vehicle_id", "VEHICLE_001")
                 val url = "http://$host:$port/api/vehicles/$vehicleId/signals"
                 val connection = URL(url).openConnection() as HttpURLConnection
@@ -370,6 +370,30 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.w("VeilService", "Failed to send data to Veil service", e)
             }
+        }
+    }
+
+
+    private fun sendAppError(tag: String, message: String, stackTrace: String? = null) {
+        val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
+        if (!prefs.getBoolean("veil_send", true)) return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val host = prefs.getString("veil_host", "10.0.2.2")
+                val port = prefs.getString("veil_port", "8100")
+                val vehicleId = prefs.getString("vehicle_id", "VEHICLE_001")
+                val url = "http://$host:$port/api/vehicles/$vehicleId/app-errors"
+                val connection = URL(url).openConnection() as HttpURLConnection
+                connection.requestMethod = "POST"
+                connection.setRequestProperty("Content-Type", "application/json")
+                connection.doOutput = true
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                val escapedStack: String? = null  // stack trace sent separately via CrashLogger file
+                val json = "{\"timestamp\":" + System.currentTimeMillis() + ",\"tag\":\"" + tag + "\",\"message\":\"" + message + "\",\"stackTrace\":null}"
+                connection.outputStream.use { it.write(json.toByteArray()) }
+                connection.responseCode
+            } catch (_: Exception) {}
         }
     }
 

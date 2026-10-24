@@ -5,6 +5,10 @@ plugins {
 }
 
 group = "org.caniorebirth"
+
+application {
+    mainClass.set("org.caniorebirth.veil.ApplicationKt")
+}
 version = "1.0.0"
 
 repositories {
@@ -13,6 +17,9 @@ repositories {
 
 dependencies {
     implementation("io.ktor:ktor-server-core:3.0.0")
+    implementation("io.ktor:ktor-server-status-pages:3.0.0")
+    implementation("io.ktor:ktor-server-cors:3.0.0")
+    implementation("io.ktor:ktor-server-content-negotiation:3.0.0")
     implementation("io.ktor:ktor-server-netty:3.0.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
