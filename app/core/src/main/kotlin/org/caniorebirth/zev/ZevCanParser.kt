@@ -31,6 +31,7 @@ class ZevCanParser(
     private var gear: Char? = null
     private var charging: Boolean? = null
     private var chargePowerFactor: Int? = null
+    private var cockpitFlags: Int? = null
     private var ampHours: Double? = null
 
     // Cell data
@@ -55,6 +56,9 @@ class ZevCanParser(
             }
             ID_GEAR -> if (frame.size == SHORT) {
                 gear = gearFor(frame.u(0))
+            }
+            ID_COCKPIT -> if (frame.size >= 1) {
+                cockpitFlags = frame.u(0)
             }
             ID_MOTOR_RPM -> {
                 var rpm = frame.u16(6) - 10000
@@ -152,6 +156,7 @@ class ZevCanParser(
         gear = gear,
         chargingFlag = charging,
         chargePowerFactor = chargePowerFactor,
+        cockpitFlags = cockpitFlags,
         ampHours = ampHours,
         vin = vin,
         cellVoltages = cellVoltagesArray().toList(),
@@ -255,6 +260,7 @@ class ZevCanParser(
         const val ID_AUX_BATTERY = 0x389
         const val ID_ODOMETER = 0x412
         const val ID_GEAR = 0x418
+        const val ID_COCKPIT = 0x424
         const val ID_CELL_BLOCK_1 = 0x6E1
         const val ID_CELL_BLOCK_2 = 0x6E2
         const val ID_CELL_BLOCK_3 = 0x6E3

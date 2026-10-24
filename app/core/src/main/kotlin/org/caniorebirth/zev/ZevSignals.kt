@@ -9,6 +9,8 @@ package org.caniorebirth.zev
 data class ZevSignals(
     // --- 0x298 ---------------------------------------------------------
     val motorRpm: Int? = null,
+    /** Cockpit light / blinker / high-beam bit flags (raw, from 0x424). */
+    val cockpitFlags: Int? = null,
 
     // --- 0x373 ---------------------------------------------------------
     /** Pack current in amperes. Positive = discharge, negative = charge. */
