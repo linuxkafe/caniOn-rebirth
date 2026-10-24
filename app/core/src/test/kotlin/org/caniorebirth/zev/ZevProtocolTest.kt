@@ -163,19 +163,20 @@ class ZevProtocolTest {
         // 8 data bytes: group, unused, temp0, temp1, volt0_hi, volt0_lo, volt1_hi, volt1_lo
         // 0x0064 = 100 -> 100/200 = 0.5 V, +2.1 = 2.6 V
         parser.accept(frame(0x6E1, 1, 0, 60, 61, 0x00, 0x64, 0x00, 0x64))
-        val v = parser.cellVoltages()
+        val s = parser.signals()
+        val v = s.cellVoltages
         assertEquals(2.6, v[0]!!, 0.0001)
         assertEquals(2.6, v[1]!!, 0.0001)
         // temperature bytes 2 and 3 -> minus 50
-        assertEquals(10, parser.cellTemperatures()[0])
-        assertEquals(11, parser.cellTemperatures()[1])
+        assertEquals(10, s.cellTemperatures[0])
+        assertEquals(11, s.cellTemperatures[1])
     }
 
     @Test
     fun `rejects cell frames with an out of range group`() {
         val parser = ZevCanParser()
         parser.accept(frame(0x6E1, 99, 0, 0, 0, 0, 0, 0, 0))
-        assertTrue(parser.cellVoltages().all { it == null })
+        assertTrue(parser.signals().cellVoltages.all { it == null })
     }
 
     @Test

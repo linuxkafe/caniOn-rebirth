@@ -4,31 +4,21 @@ import android.Manifest
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import org.caniorebirth.zev.ZevCanParser
 import org.caniorebirth.zev.ZevSignals
 import org.caniorebirth.zev.ObdClient
 import org.caniorebirth.zev.CanBusError
-import kotlinx.serialization.json.Json
 import java.net.URL
 import java.net.HttpURLConnection
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
-/**
- * Minimal host activity: connect to a paired adapter and display the live
- * ZEV signals.
- *
- * The heavy lifting is in `core`; this class only wires the Android
- * Bluetooth stack to it and shows the result.
- */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var status: TextView
@@ -50,23 +40,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-    private val devicePicker =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { /* wired by the host */ }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        status = TextView(this)
-        readout = TextView(this)
-        errorsView = TextView(this)
-        
-        // Create a scrollable layout with status, readout, and errors
-        val layout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            addView(status)
-            addView(readout)
-            addView(errorsView)
-        }
-        setContentView(layout)
+        setContentView(R.layout.activity_main)
+
+        status = findViewById(R.id.tvStatus)
+        readout = findViewById(R.id.tvReadout)
+        errorsView = findViewById(R.id.tvErrors)
+
         status.text = "Ready"
     }
 
@@ -94,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         t.onBytes = { bytes -> c.onBytes(bytes) }
         t.onError = { e -> status.text = "Bluetooth error: ${e.message}" }
         c.onAdapterError = { line -> status.text = "Adapter said: $line" }
-        c.onFrame = { frame -> 
+        c.onFrame = { frame ->
             val signals = parser.signals()
             runOnUiThread { readout.text = describe(parser.signals()) }
             updateErrorsView(parser.getCurrentErrors())
@@ -104,30 +85,25 @@ class MainActivity : AppCompatActivity() {
         c.start()
     }
 
-    private fun sendToVeilService(signals: org.caniorebirth.zev.ZevSignals, errors: List<org.caniorebirth.zev.CanBusError>) {
+    private fun sendToVeilService(signals: ZevSignals, errors: List<CanBusError>) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val connection = URL("http://10.0.2.2:8080/api/vehicles/VEHICLE_001/signals").openConnection() as java.net.HttpURLConnection
+                val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
+                val host = prefs.getString("veil_host", "10.0.2.2")
+                val port = prefs.getString("veil_port", "8080")
+                val vehicleId = prefs.getString("vehicle_id", "VEHICLE_001")
+                val url = "http://$host:$port/api/vehicles/$vehicleId/signals"
+                val connection = URL(url).openConnection() as HttpURLConnection
                 connection.requestMethod = "POST"
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.doOutput = true
                 connection.connectTimeout = 5000
                 connection.readTimeout = 5000
-                
-                // Convert signals and errors to JSON
-                val json = kotlinx.serialization.json.Json.encodeToString(
-                    org.caniorebirth.zev.ZevSignals.serializer(), parser.signals()
-                )
-                
-                connection.doOutput = true
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-                connection.doOutput = true
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json")
-                
+
+                val json = """{"soc":${signals.soc ?: "null"},"packVoltage":${signals.packVoltage ?: "null"},"packCurrent":${signals.packCurrent ?: "null"},"motorRpm":${signals.motorRpm ?: "null"},"hasCanBusErrors":${signals.hasCanBusErrors}}"""
+
                 connection.outputStream.use { it.write(json.toByteArray()) }
-                
+
                 val responseCode = connection.responseCode
                 if (responseCode != 200) {
                     Log.w("VeilService", "Failed to send data: $responseCode")
@@ -138,7 +114,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateErrorsView(errors: List<org.caniorebirth.zev.CanBusError>) {
+    private fun updateErrorsView(errors: List<CanBusError>) {
         runOnUiThread {
             if (errors.isEmpty()) {
                 errorsView.text = "No errors"
@@ -148,8 +124,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getVehicleId(): String {
-        return android.provider.Settings.Secure.getString(contentResolver, android.provider.Settings.Secure.ANDROID_ID) ?: "unknown"
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.action_errors -> {
+            startActivity(android.content.Intent(this, ErrorsActivity::class.java))
+            true
+        }
+        R.id.action_settings -> {
+            startActivity(android.content.Intent(this, SettingsActivity::class.java))
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
     }
 
     override fun onDestroy() {
@@ -163,10 +152,11 @@ class MainActivity : AppCompatActivity() {
         appendLine("Pack A   : ${s.packCurrent?.let { "%.1f A".format(it) } ?: "--"}")
         appendLine("Pack W   : ${s.packPower?.let { "%.0f W".format(it) } ?: "--"}")
         appendLine("RPM      : ${s.motorRpm ?: "--"}")
-        appendLine("Speed    : ${s.gear ?: "--"}")
+        appendLine("Gear     : ${s.gear ?: "--"}")
         appendLine("Odo      : ${s.odometerMiles ?: "--"} mi")
         appendLine("Ah       : ${s.ampHours?.let { "%.1f Ah".format(it) } ?: "--"}")
         appendLine("VIN      : ${s.vin ?: "--"}")
         val cells = s.cellVoltages.count { it != null }
         appendLine("Cells    : $cells known, ${if (s.is96CellPack == true) "96-cell" else "24-cell"} pack")
     }
+}
