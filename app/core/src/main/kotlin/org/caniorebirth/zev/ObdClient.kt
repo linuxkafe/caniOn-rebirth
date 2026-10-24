@@ -92,8 +92,8 @@ class ObdClient(
         // FrameSplitter only decodes on CR; re-add the terminator that onBytes stripped.
         val frames = splitter.feed((line + "\r").toByteArray(Charsets.UTF_8))
         for (f in frames) {
-            onFrame?.invoke(f)
             parser.accept(f)
+            onFrame?.invoke(f)
         }
     }
 

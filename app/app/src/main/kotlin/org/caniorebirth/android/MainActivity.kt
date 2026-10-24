@@ -247,8 +247,8 @@ class MainActivity : AppCompatActivity() {
         val c = ObdClient(t, parser)
         client = c
         t.onBytes = { bytes -> c.onBytes(bytes) }
-        t.onError = { e -> status.text = "Bluetooth error: ${e.message}" }
-        c.onAdapterError = { line -> status.text = "Adapter said: $line" }
+        t.onError = { e -> runOnUiThread { status.text = "Bluetooth error: ${e.message}" } }
+        c.onAdapterError = { line -> runOnUiThread { status.text = "Adapter said: $line" } }
         c.onFrame = { frame ->
             runOnUiThread {
                 val sig = parser.signals()
@@ -411,6 +411,96 @@ class MainActivity : AppCompatActivity() {
             android.widget.Toast.makeText(this, "Exported to ${f.absolutePath}", android.widget.Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             android.widget.Toast.makeText(this, "Export failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun loadDemoData() {
+        // Synthetic i-MiEV-like data for UI validation when no adapter is connected.
+        val sig = org.caniorebirth.zev.ZevSignals(
+            motorRpm = 2500,
+            packCurrent = -12.5,
+            packVoltage = 330.0,
+            packPower = -4125.0,
+            soc = 72.0,
+            auxBatteryVoltage = 12.6,
+            auxBatteryCurrent = 1.2,
+            heaterReturnTempC = 22.0,
+            heaterFlowTempC = 28.0,
+            heaterCurrent = 5.0,
+            acCurrent = 2.0,
+            acPower = 660.0,
+            heaterPower = 1650.0,
+            odometerMiles = 45230,
+            odometerRaw = 2612000,
+            gear = 'D',
+            chargingFlag = false,
+            chargePowerFactor = 0,
+            ampHours = 38.5,
+            vin = "JF1AA5A50A0000001",
+            cellVoltages = List(96) { 3.6 + (it % 7) * 0.02 },
+            cellTemperatures = List(96) { 20 + (it % 5) },
+            is96CellPack = true,
+            canBusErrors = emptyList(),
+            hasCanBusErrors = false
+        )
+        // Feed parser with a synthetic frame so state is consistent (optional).
+        // Update UI directly.
+        runOnUiThread {
+            readout.text = describe(sig)
+            updateErrorsView(emptyList())
+            cellGrid.setVoltages(sig.cellVoltages)
+            cellGrid.setTemperatures(sig.cellTemperatures.map { it?.toDouble() })
+            cellTempGrid.setVoltages(sig.cellTemperatures.map { it?.toDouble() })
+            tvHeater.text = buildString {
+                appendLine("Heater return: ${sig.heaterReturnTempC?.let { "%.1f C".format(it) } ?: "--"}")
+                appendLine("Heater flow  : ${sig.heaterFlowTempC?.let { "%.1f C".format(it) } ?: "--"}")
+                appendLine("Heater curr  : ${sig.heaterCurrent?.let { "%.1f A".format(it) } ?: "--"}")
+                appendLine("Heater power : ${sig.heaterPower?.let { "%.0f W".format(it) } ?: "--"}")
+                appendLine("AC current   : ${sig.acCurrent?.let { "%.1f A".format(it) } ?: "--"}")
+                appendLine("AC power     : ${sig.acPower?.let { "%.0f W".format(it) } ?: "--"}")
+            }
+            tvVehicle.text = buildString {
+                appendLine("VIN          : ${sig.vin ?: "--"}")
+                appendLine("Odometer     : ${sig.odometerMiles ?: "--"} mi")
+                appendLine("Gear         : ${sig.gear ?: "--"}")
+                appendLine("RPM          : ${sig.motorRpm ?: "--"}")
+                appendLine("Ah           : ${sig.ampHours?.let { "%.1f".format(it) } ?: "--"}")
+                appendLine("Charging     : ${sig.chargingFlag ?: "--"}")
+                appendLine("Pack         : ${if (sig.is96CellPack == true) "96-cell" else "24-cell"}")
+                appendLine("Cells known  : ${sig.cellVoltages.count { it != null }}")
+                appendLine("Cockpit flags: --")
+            }
+            val cells = sig.cellVoltages.filterNotNull()
+            val temps = sig.cellTemperatures.filterNotNull()
+            tvCellSummary.text = buildString {
+                append("Cells V: ")
+                append("min ${cells.minOrNull()?.let { "%.3f".format(it) } ?: "--"}  ")
+                append("max ${cells.maxOrNull()?.let { "%.3f".format(it) } ?: "--"}  ")
+                append("avg ${if (cells.isNotEmpty()) "%.3f".format(cells.average()) else "--"}")
+                append("   |   T: ")
+                append("min ${temps.minOrNull()?.let { "%.0f".format(it) } ?: "--"}  ")
+                append("max ${temps.maxOrNull()?.let { "%.0f".format(it) } ?: "--"}  ")
+                append("avg ${if (temps.isNotEmpty()) "%.0f".format(temps.average()) else "--"}")
+            }
+            sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat() }
+            sig.motorRpm?.let { gaugeRpm.value = it.toFloat() }
+            sig.packPower?.let { gaugePower.value = it.toFloat() }
+            sig.packCurrent?.let { gaugeCurrent.value = it.toFloat() }
+            sig.auxBatteryVoltage?.let { gaugeAux.value = it.toFloat() }
+            sig.acPower?.let { gaugeAcPower.value = kotlin.math.abs(it).toFloat() }
+            for (i in 0 until 60) {
+                socHistory.add((70 + (i % 5)).toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0)
+                voltHistory.add((330 + (i % 3)).toFloat()); if (voltHistory.size > maxHistory) voltHistory.removeAt(0)
+                currHistory.add((-10 + (i % 7)).toFloat()); if (currHistory.size > maxHistory) currHistory.removeAt(0)
+                cellSpreadHistory.add((0.1f + (i % 3) * 0.02f)); if (cellSpreadHistory.size > maxHistory) cellSpreadHistory.removeAt(0)
+            }
+            chartSoc.setData(ArrayList(socHistory), "SOC")
+            chartVolt.setData(ArrayList(voltHistory), "V")
+            chartCurr.setData(ArrayList(currHistory), "A")
+            chartCellSpread.setData(ArrayList(cellSpreadHistory), "spread")
+            sig.gear?.let { tvGear.text = it.toString() }
+            sig.odometerMiles?.let { tvRange.text = "%.0f km".format(it * 1.60934) }
+            status.text = "Demo mode"
         }
     }
 
