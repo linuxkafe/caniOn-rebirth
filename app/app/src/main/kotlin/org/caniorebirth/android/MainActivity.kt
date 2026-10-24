@@ -43,6 +43,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var chartVolt: SignalChartView
     private lateinit var chartCurr: SignalChartView
     private lateinit var chartCellSpread: SignalChartView
+    private lateinit var gaugeSoc: GaugeView
+    private lateinit var gaugeRpm: GaugeView
 
     private val socHistory = mutableListOf<Float>()
     private val voltHistory = mutableListOf<Float>()
@@ -126,6 +128,16 @@ class MainActivity : AppCompatActivity() {
         chartVolt = findViewById(R.id.chartVolt)
         chartCurr = findViewById(R.id.chartCurr)
         chartCellSpread = findViewById(R.id.chartCellSpread)
+        gaugeSoc = findViewById(R.id.gaugeSoc)
+        gaugeRpm = findViewById(R.id.gaugeRpm)
+        gaugeSoc.label = "SOC"
+        gaugeSoc.unit = "%"
+        gaugeSoc.min = 0f
+        gaugeSoc.max = 100f
+        gaugeRpm.label = "RPM"
+        gaugeRpm.unit = "rpm"
+        gaugeRpm.min = 0f
+        gaugeRpm.max = 8000f
 
         status.text = "Ready"
     }
@@ -217,7 +229,8 @@ class MainActivity : AppCompatActivity() {
                     appendLine("Pack         : ${if (sig.is96CellPack == true) "96-cell" else "24-cell"}")
                     appendLine("Cells known  : ${sig.cellVoltages.count { it != null }}")
                 }
-                sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0) }
+                sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat() }
+                sig.motorRpm?.let { gaugeRpm.value = it.toFloat() }
                 sig.packVoltage?.let { voltHistory.add(it.toFloat()); if (voltHistory.size > maxHistory) voltHistory.removeAt(0) }
                 sig.packCurrent?.let { currHistory.add(it.toFloat()); if (currHistory.size > maxHistory) currHistory.removeAt(0) }
                 val cells = sig.cellVoltages.filterNotNull()
