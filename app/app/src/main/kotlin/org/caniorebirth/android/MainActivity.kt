@@ -156,7 +156,13 @@ class MainActivity : AppCompatActivity() {
         appendLine("Odo      : ${s.odometerMiles ?: "--"} mi")
         appendLine("Ah       : ${s.ampHours?.let { "%.1f Ah".format(it) } ?: "--"}")
         appendLine("VIN      : ${s.vin ?: "--"}")
-        val cells = s.cellVoltages.count { it != null }
-        appendLine("Cells    : $cells known, ${if (s.is96CellPack == true) "96-cell" else "24-cell"} pack")
+        val cells = s.cellVoltages.filterNotNull()
+        val minV = cells.minOrNull()
+        val maxV = cells.maxOrNull()
+        val avgV = if (cells.isNotEmpty()) cells.average() else null
+        appendLine("Cells    : ${cells.size} known, ${if (s.is96CellPack == true) "96-cell" else "24-cell"} pack")
+        if (cells.isNotEmpty()) {
+            appendLine("Cell V   : min ${"%.3f".format(minV)} max ${"%.3f".format(maxV)} avg ${"%.3f".format(avgV)} V")
+        }
     }
 }
