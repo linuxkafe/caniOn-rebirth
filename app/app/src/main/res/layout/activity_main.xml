@@ -48,37 +48,24 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="4dp">
 
                     <org.caniorebirth.android.GaugeView
                         android:id="@+id/gaugeSoc"
                         android:layout_width="0dp"
-                        android:layout_height="160dp"
+                        android:layout_height="110dp"
                         android:layout_weight="1" />
 
                     <org.caniorebirth.android.GaugeView
                         android:id="@+id/gaugeRpm"
                         android:layout_width="0dp"
-                        android:layout_height="160dp"
+                        android:layout_height="110dp"
                         android:layout_weight="1" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="8dp">
 
                     <org.caniorebirth.android.GaugeView
                         android:id="@+id/gaugePower"
                         android:layout_width="0dp"
-                        android:layout_height="160dp"
-                        android:layout_weight="1" />
-
-                    <org.caniorebirth.android.GaugeView
-                        android:id="@+id/gaugeCurrent"
-                        android:layout_width="0dp"
-                        android:layout_height="160dp"
+                        android:layout_height="110dp"
                         android:layout_weight="1" />
                 </LinearLayout>
 
@@ -86,29 +73,44 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="4dp">
+
+                    <org.caniorebirth.android.GaugeView
+                        android:id="@+id/gaugeCurrent"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
 
                     <org.caniorebirth.android.GaugeView
                         android:id="@+id/gaugeAux"
                         android:layout_width="0dp"
-                        android:layout_height="160dp"
+                        android:layout_height="110dp"
                         android:layout_weight="1" />
 
                     <org.caniorebirth.android.GaugeView
                         android:id="@+id/gaugeAcPower"
                         android:layout_width="0dp"
-                        android:layout_height="160dp"
+                        android:layout_height="110dp"
                         android:layout_weight="1" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvCellSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cells: --"
+                    android:textSize="13sp"
+                    android:fontFamily="monospace"
+                    android:layout_marginBottom="4dp" />
 
                 <TextView
                     android:id="@+id/tvReadout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text=""
-                    android:textSize="13sp"
+                    android:textSize="12sp"
                     android:fontFamily="monospace"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginBottom="4dp" />
 
                 <TextView
                     android:id="@+id/tvErrors"

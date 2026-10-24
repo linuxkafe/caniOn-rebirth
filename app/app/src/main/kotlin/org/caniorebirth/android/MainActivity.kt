@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sectionVehicle: android.widget.LinearLayout
     private lateinit var sectionMap: android.widget.LinearLayout
     private lateinit var tvHeater: android.widget.TextView
+    private lateinit var tvCellSummary: android.widget.TextView
     private lateinit var tvVehicle: android.widget.TextView
     private lateinit var chartSoc: SignalChartView
     private lateinit var chartVolt: SignalChartView
@@ -83,6 +84,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         AppCompatDelegate.setDefaultNightMode(if (prefs.getBoolean("dark_mode", false)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        if (prefs.getBoolean("force_landscape", false)) {
+            requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -98,6 +102,7 @@ class MainActivity : AppCompatActivity() {
         sectionVehicle = findViewById(R.id.sectionVehicle)
         sectionMap = findViewById(R.id.sectionMap)
         tvHeater = findViewById(R.id.tvHeater)
+        tvCellSummary = findViewById(R.id.tvCellSummary)
         tvVehicle = findViewById(R.id.tvVehicle)
         tabLayout.addTab(tabLayout.newTab().setText("Dashboard"))
         tabLayout.addTab(tabLayout.newTab().setText("Cells"))
@@ -235,6 +240,18 @@ class MainActivity : AppCompatActivity() {
                 cellGrid.setVoltages(sig.cellVoltages)
                 cellGrid.setTemperatures(sig.cellTemperatures.map { it?.toDouble() })
                 cellTempGrid.setVoltages(sig.cellTemperatures.map { it?.toDouble() })
+            val cellVs = sig.cellVoltages.filterNotNull()
+            val temps = sig.cellTemperatures.filterNotNull()
+            tvCellSummary.text = buildString {
+                append("Cells V: ")
+                append("min ${cellVs.minOrNull()?.let { "%.3f".format(it) } ?: "--"}  ")
+                append("max ${cellVs.maxOrNull()?.let { "%.3f".format(it) } ?: "--"}  ")
+                append("avg ${if (cellVs.isNotEmpty()) "%.3f".format(cellVs.average()) else "--"}")
+                append("   |   T: ")
+                append("min ${temps.minOrNull()?.let { "%.0f".format(it) } ?: "--"}  ")
+                append("max ${temps.maxOrNull()?.let { "%.0f".format(it) } ?: "--"}  ")
+                append("avg ${if (temps.isNotEmpty()) "%.0f".format(temps.average()) else "--"}")
+            }
                 tvHeater.text = buildString {
                     appendLine("Heater return: ${sig.heaterReturnTempC?.let { "%.1f C".format(it) } ?: "--"}")
                     appendLine("Heater flow  : ${sig.heaterFlowTempC?.let { "%.1f C".format(it) } ?: "--"}")
