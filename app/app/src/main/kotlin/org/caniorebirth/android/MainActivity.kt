@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
-        AppCompatDelegate.setDefaultNightMode(if (prefs.getBoolean("dark_mode", false)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO)
+        AppCompatDelegate.setDefaultNightMode(if (prefs.getBoolean("dark_mode", false)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -233,13 +233,27 @@ class MainActivity : AppCompatActivity() {
             }
         }
         status.text = "Connecting to ${device.name}…"
-        c.start()
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                c.start()
+            } catch (e: Exception) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    status.text = "Connection failed: ${e.message}"
+                    onErrorToast(e)
+                }
+            }
+        }
+    }
+
+    private fun onErrorToast(e: Exception) {
+        android.widget.Toast.makeText(this, "BT error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
     }
 
     private fun sendToVeilService(signals: ZevSignals, errors: List<CanBusError>) {
+        val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
+        if (!prefs.getBoolean("veil_send", true)) return
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
                 val host = prefs.getString("veil_host", "10.0.2.2")
                 val port = prefs.getString("veil_port", "8080")
                 val vehicleId = prefs.getString("vehicle_id", "VEHICLE_001")

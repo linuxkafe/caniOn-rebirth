@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatDelegate
 
 class SettingsActivity : AppCompatActivity() {
     private fun applyNightMode(dark: Boolean) {
-        AppCompatDelegate.setDefaultNightMode(if (dark) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO)
+        AppCompatDelegate.setDefaultNightMode(if (dark) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
     }
 
     private lateinit var prefs: SharedPreferences
@@ -28,6 +28,8 @@ class SettingsActivity : AppCompatActivity() {
         val swFahrenheit = findViewById<Switch>(R.id.swFahrenheit)
         val swKilometers = findViewById<Switch>(R.id.swKilometers)
         val swDarkMode = findViewById<Switch>(R.id.swDarkMode)
+        val swVeilSend = findViewById<Switch>(R.id.swVeilSend)
+        val swFileLog = findViewById<Switch>(R.id.swFileLog)
         val btnSave = findViewById<Button>(R.id.btnSave)
 
         etVeilHost.setText(prefs.getString("veil_host", "10.0.2.2"))
@@ -36,6 +38,8 @@ class SettingsActivity : AppCompatActivity() {
         swFahrenheit.isChecked = prefs.getBoolean("use_fahrenheit", false)
         swKilometers.isChecked = prefs.getBoolean("use_kilometers", false)
         swDarkMode.isChecked = prefs.getBoolean("dark_mode", false)
+        swVeilSend.isChecked = prefs.getBoolean("veil_send", true)
+        swFileLog.isChecked = prefs.getBoolean("file_log", false)
 
         btnSave.setOnClickListener {
             prefs.edit()
@@ -45,6 +49,8 @@ class SettingsActivity : AppCompatActivity() {
                 .putBoolean("use_fahrenheit", swFahrenheit.isChecked)
                 .putBoolean("use_kilometers", swKilometers.isChecked)
                 .putBoolean("dark_mode", swDarkMode.isChecked)
+                .putBoolean("veil_send", swVeilSend.isChecked)
+                .putBoolean("file_log", swFileLog.isChecked)
                 .apply()
             applyNightMode(swDarkMode.isChecked)
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()

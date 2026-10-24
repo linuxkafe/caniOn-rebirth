@@ -65,7 +65,19 @@
             android:id="@+id/swDarkMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Dark mode" />
+            android:text="Dark mode (auto if off)" />
+
+        <Switch
+            android:id="@+id/swVeilSend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Send telemetry to Veil service" />
+
+        <Switch
+            android:id="@+id/swFileLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Log to file (/sdcard/BT_CAN)" />
 
         <Button
             android:id="@+id/btnSave"
