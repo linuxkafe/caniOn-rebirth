@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var status: TextView
     private lateinit var readout: TextView
     private lateinit var errorsView: TextView
+    private lateinit var btnConnect: android.widget.Button
     private lateinit var cellGrid: CellGridView
     private lateinit var cellTempGrid: CellGridView
     private lateinit var chartSoc: SignalChartView
@@ -67,6 +68,12 @@ class MainActivity : AppCompatActivity() {
         status = findViewById(R.id.tvStatus)
         readout = findViewById(R.id.tvReadout)
         errorsView = findViewById(R.id.tvErrors)
+        btnConnect = findViewById(R.id.btnConnect)
+        btnConnect.setOnClickListener {
+            val needed = permissions()
+            val missing = needed.filter { checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
+            if (missing.isEmpty()) connect() else requestPermissions.launch(missing.toTypedArray())
+        }
         startLocationTracking()
         cellGrid = findViewById(R.id.cellGrid)
         cellTempGrid = findViewById(R.id.cellTempGrid)
@@ -105,11 +112,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun connect() {
-        val device = BluetoothObdTransport.candidateAdapters(this).firstOrNull()
-        if (device == null) {
+        val adapters = BluetoothObdTransport.candidateAdapters(this)
+        if (adapters.isEmpty()) {
             status.text = "No paired Bluetooth device found. Pair your OBD adapter first."
             return
         }
+        if (adapters.size == 1) {
+            connectTo(adapters[0])
+            return
+        }
+        // Device picker dialog
+        val names = adapters.map { "${it.name} (${it.address})" }.toTypedArray()
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Select OBD adapter")
+            .setItems(names) { _, which -> connectTo(adapters[which]) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun connectTo(device: android.bluetooth.BluetoothDevice) {
         val t = BluetoothObdTransport(this, device)
         transport = t
         val c = ObdClient(t, parser)
