@@ -31,6 +31,7 @@ class SettingsActivity : AppCompatActivity() {
         val swForceLandscape = findViewById<Switch>(R.id.swForceLandscape)
         val swVeilSend = findViewById<Switch>(R.id.swVeilSend)
         val swFileLog = findViewById<Switch>(R.id.swFileLog)
+        val btnForgetDevice = findViewById<Button>(R.id.btnForgetDevice)
         val etOdometerDivisor = findViewById<EditText>(R.id.etOdometerDivisor)
         val sw96Cell = findViewById<Switch>(R.id.sw96Cell)
         val btnSave = findViewById<Button>(R.id.btnSave)
@@ -46,6 +47,11 @@ class SettingsActivity : AppCompatActivity() {
         swFileLog.isChecked = prefs.getBoolean("file_log", false)
         etOdometerDivisor.setText(prefs.getString("odometer_divisor", "57.75"))
         sw96Cell.isChecked = prefs.getBoolean("force_96cell", false)
+
+        btnForgetDevice.setOnClickListener {
+            prefs.edit().remove("last_device").apply()
+            Toast.makeText(this, "Device forgotten", Toast.LENGTH_SHORT).show()
+        }
 
         btnSave.setOnClickListener {
             prefs.edit()

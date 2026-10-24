@@ -85,6 +85,13 @@
             android:layout_height="wrap_content"
             android:text="Log to file (/sdcard/BT_CAN)" />
 
+        <Button
+            android:id="@+id/btnForgetDevice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Forget saved BT device"
+            android:layout_marginTop="8dp" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
