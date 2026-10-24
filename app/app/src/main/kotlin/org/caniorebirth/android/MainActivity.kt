@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cellGrid: CellGridView
     private lateinit var cellTempGrid: CellGridView
     private lateinit var tabLayout: com.google.android.material.tabs.TabLayout
+    private var sectionCharts: android.widget.LinearLayout? = null
     private lateinit var sectionDashboard: android.widget.LinearLayout
     private lateinit var sectionCells: android.widget.LinearLayout
     private lateinit var sectionHeater: android.widget.LinearLayout
@@ -100,6 +101,7 @@ class MainActivity : AppCompatActivity() {
         errorsView = findViewById(R.id.tvErrors)
         btnConnect = findViewById(R.id.btnConnect)
         tabLayout = findViewById(R.id.tabLayout)
+        sectionCharts = findViewById(R.id.sectionCharts)
         sectionDashboard = findViewById(R.id.sectionDashboard)
         sectionCells = findViewById(R.id.sectionCells)
         sectionHeater = findViewById(R.id.sectionHeater)
@@ -111,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         tvRange = findViewById(R.id.tvRange)
         tvVehicle = findViewById(R.id.tvVehicle)
         tabLayout.addTab(tabLayout.newTab().setText("Dashboard"))
+        tabLayout.addTab(tabLayout.newTab().setText("Charts"))
         tabLayout.addTab(tabLayout.newTab().setText("Cells"))
         tabLayout.addTab(tabLayout.newTab().setText("Heater"))
         tabLayout.addTab(tabLayout.newTab().setText("Vehicle"))
@@ -123,6 +126,13 @@ class MainActivity : AppCompatActivity() {
             override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
         })
         showSection(0)
+        // Auto-hide tab bar on scroll down, show on scroll up
+        val scrollView = findViewById<android.widget.ScrollView>(R.id.scrollView)
+        scrollView?.viewTreeObserver?.addOnScrollChangedListener {
+            val sy = scrollView.scrollY
+            if (sy > 50) tabLayout.animate().alpha(0f).setDuration(200).start()
+            else tabLayout.animate().alpha(1f).setDuration(200).start()
+        }
         btnConnect.setOnClickListener {
             val needed = permissions()
             val missing = needed.filter { checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
@@ -217,10 +227,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSection(pos: Int) {
         sectionDashboard.visibility = if (pos == 0) android.view.View.VISIBLE else android.view.View.GONE
-        sectionCells.visibility = if (pos == 1) android.view.View.VISIBLE else android.view.View.GONE
-        sectionHeater.visibility = if (pos == 2) android.view.View.VISIBLE else android.view.View.GONE
-        sectionVehicle.visibility = if (pos == 3) android.view.View.VISIBLE else android.view.View.GONE
-        sectionMap.visibility = if (pos == 4) android.view.View.VISIBLE else android.view.View.GONE
+        sectionCharts?.visibility = if (pos == 1) android.view.View.VISIBLE else android.view.View.GONE
+        sectionCells.visibility = if (pos == 2) android.view.View.VISIBLE else android.view.View.GONE
+        sectionHeater.visibility = if (pos == 3) android.view.View.VISIBLE else android.view.View.GONE
+        sectionVehicle.visibility = if (pos == 4) android.view.View.VISIBLE else android.view.View.GONE
+        sectionMap.visibility = if (pos == 5) android.view.View.VISIBLE else android.view.View.GONE
     }
 
     private fun connect() {

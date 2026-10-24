@@ -12,6 +12,7 @@
         app:tabMode="scrollable" />
 
     <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -146,6 +147,16 @@
                     android:textSize="13sp"
                     android:layout_marginBottom="8dp" />
 
+            </LinearLayout>
+
+            <!-- CHARTS -->
+            <LinearLayout
+                android:id="@+id/sectionCharts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -193,6 +204,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="140dp"
                     android:layout_marginBottom="8dp" />
+
             </LinearLayout>
 
             <!-- CELLS -->
