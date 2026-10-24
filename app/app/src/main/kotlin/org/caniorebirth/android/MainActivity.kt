@@ -53,6 +53,11 @@ class MainActivity : AppCompatActivity() {
     private var client: ObdClient? = null
     private var transport: BluetoothObdTransport? = null
     private val parser = ZevCanParser()
+
+    companion object {
+        @Volatile
+        var sharedParser: ZevCanParser? = null
+    }
     private var locationManager: LocationManager? = null
     private val locationListener = LocationListener { loc ->
         (supportFragmentManager.findFragmentById(R.id.map) as? MapFragment)?.updatePosition(loc.latitude, loc.longitude)
@@ -75,6 +80,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        sharedParser = parser
         status = findViewById(R.id.tvStatus)
         readout = findViewById(R.id.tvReadout)
         errorsView = findViewById(R.id.tvErrors)
@@ -186,44 +192,45 @@ class MainActivity : AppCompatActivity() {
         t.onError = { e -> status.text = "Bluetooth error: ${e.message}" }
         c.onAdapterError = { line -> status.text = "Adapter said: $line" }
         c.onFrame = { frame ->
-            val signals = parser.signals()
-            runOnUiThread { readout.text = describe(parser.signals()) }
-            updateErrorsView(parser.getCurrentErrors())
-            val sig = parser.signals()
-            cellGrid.setVoltages(sig.cellVoltages)
-            cellGrid.setTemperatures(sig.cellTemperatures.map { it?.toDouble() })
-            cellTempGrid.setVoltages(sig.cellTemperatures.map { it?.toDouble() })
-            tvHeater.text = buildString {
-                appendLine("Heater return: ${sig.heaterReturnTempC?.let { "%.1f C".format(it) } ?: "--"}")
-                appendLine("Heater flow  : ${sig.heaterFlowTempC?.let { "%.1f C".format(it) } ?: "--"}")
-                appendLine("Heater curr  : ${sig.heaterCurrent?.let { "%.1f A".format(it) } ?: "--"}")
-                appendLine("Heater power : ${sig.heaterPower?.let { "%.0f W".format(it) } ?: "--"}")
-                appendLine("AC current   : ${sig.acCurrent?.let { "%.1f A".format(it) } ?: "--"}")
-                appendLine("AC power     : ${sig.acPower?.let { "%.0f W".format(it) } ?: "--"}")
+            runOnUiThread {
+                val sig = parser.signals()
+                readout.text = describe(sig)
+                updateErrorsView(parser.getCurrentErrors())
+                cellGrid.setVoltages(sig.cellVoltages)
+                cellGrid.setTemperatures(sig.cellTemperatures.map { it?.toDouble() })
+                cellTempGrid.setVoltages(sig.cellTemperatures.map { it?.toDouble() })
+                tvHeater.text = buildString {
+                    appendLine("Heater return: ${sig.heaterReturnTempC?.let { "%.1f C".format(it) } ?: "--"}")
+                    appendLine("Heater flow  : ${sig.heaterFlowTempC?.let { "%.1f C".format(it) } ?: "--"}")
+                    appendLine("Heater curr  : ${sig.heaterCurrent?.let { "%.1f A".format(it) } ?: "--"}")
+                    appendLine("Heater power : ${sig.heaterPower?.let { "%.0f W".format(it) } ?: "--"}")
+                    appendLine("AC current   : ${sig.acCurrent?.let { "%.1f A".format(it) } ?: "--"}")
+                    appendLine("AC power     : ${sig.acPower?.let { "%.0f W".format(it) } ?: "--"}")
+                }
+                tvVehicle.text = buildString {
+                    appendLine("VIN          : ${sig.vin ?: "--"}")
+                    appendLine("Odometer     : ${sig.odometerMiles ?: "--"} mi (raw ${sig.odometerRaw ?: "--"})")
+                    appendLine("Gear         : ${sig.gear ?: "--"}")
+                    appendLine("RPM          : ${sig.motorRpm ?: "--"}")
+                    appendLine("Ah           : ${sig.ampHours?.let { "%.1f".format(it) } ?: "--"}")
+                    appendLine("Charging     : ${sig.chargingFlag ?: "--"}")
+                    appendLine("Pack         : ${if (sig.is96CellPack == true) "96-cell" else "24-cell"}")
+                    appendLine("Cells known  : ${sig.cellVoltages.count { it != null }}")
+                }
+                sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0) }
+                sig.packVoltage?.let { voltHistory.add(it.toFloat()); if (voltHistory.size > maxHistory) voltHistory.removeAt(0) }
+                sig.packCurrent?.let { currHistory.add(it.toFloat()); if (currHistory.size > maxHistory) currHistory.removeAt(0) }
+                val cells = sig.cellVoltages.filterNotNull()
+                if (cells.size >= 2) {
+                    val spread = (cells.maxOrNull()!! - cells.minOrNull()!!).toFloat()
+                    cellSpreadHistory.add(spread); if (cellSpreadHistory.size > maxHistory) cellSpreadHistory.removeAt(0)
+                }
+                chartSoc.setData(ArrayList(socHistory), "SOC")
+                chartVolt.setData(ArrayList(voltHistory), "V")
+                chartCurr.setData(ArrayList(currHistory), "A")
+                chartCellSpread.setData(ArrayList(cellSpreadHistory), "spread")
+                sendToVeilService(sig, parser.getCurrentErrors())
             }
-            tvVehicle.text = buildString {
-                appendLine("VIN          : ${sig.vin ?: "--"}")
-                appendLine("Odometer     : ${sig.odometerMiles ?: "--"} mi (raw ${sig.odometerRaw ?: "--"})")
-                appendLine("Gear         : ${sig.gear ?: "--"}")
-                appendLine("RPM          : ${sig.motorRpm ?: "--"}")
-                appendLine("Ah           : ${sig.ampHours?.let { "%.1f".format(it) } ?: "--"}")
-                appendLine("Charging     : ${sig.chargingFlag ?: "--"}")
-                appendLine("Pack         : ${if (sig.is96CellPack == true) "96-cell" else "24-cell"}")
-                appendLine("Cells known  : ${sig.cellVoltages.count { it != null }}")
-            }
-            sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0) }
-            sig.packVoltage?.let { voltHistory.add(it.toFloat()); if (voltHistory.size > maxHistory) voltHistory.removeAt(0) }
-            sig.packCurrent?.let { currHistory.add(it.toFloat()); if (currHistory.size > maxHistory) currHistory.removeAt(0) }
-            val cells = sig.cellVoltages.filterNotNull()
-            if (cells.size >= 2) {
-                val spread = (cells.maxOrNull()!! - cells.minOrNull()!!).toFloat()
-                cellSpreadHistory.add(spread); if (cellSpreadHistory.size > maxHistory) cellSpreadHistory.removeAt(0)
-            }
-            chartSoc.setData(ArrayList(socHistory), "SOC")
-            chartVolt.setData(ArrayList(voltHistory), "V")
-            chartCurr.setData(ArrayList(currHistory), "A")
-            chartCellSpread.setData(ArrayList(cellSpreadHistory), "spread")
-            sendToVeilService(sig, parser.getCurrentErrors())
         }
         status.text = "Connecting to ${device.name}…"
         c.start()

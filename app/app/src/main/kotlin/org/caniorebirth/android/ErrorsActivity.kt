@@ -12,7 +12,7 @@ import org.caniorebirth.zev.ZevCanParser
 
 class ErrorsActivity : AppCompatActivity() {
 
-    private val parser = ZevCanParser()
+    private val parser = MainActivity.sharedParser ?: ZevCanParser()
     private lateinit var adapter: ErrorAdapter
     private lateinit var rvErrors: RecyclerView
 

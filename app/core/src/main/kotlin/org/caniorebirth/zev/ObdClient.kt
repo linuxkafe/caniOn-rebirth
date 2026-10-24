@@ -89,7 +89,8 @@ class ObdClient(
         // The adapter echoes the last command during ATZ; ignore it.
         if (line.startsWith("AT")) return
 
-        val frames = splitter.feed(line.toByteArray(Charsets.UTF_8))
+        // FrameSplitter only decodes on CR; re-add the terminator that onBytes stripped.
+        val frames = splitter.feed((line + "\r").toByteArray(Charsets.UTF_8))
         for (f in frames) {
             onFrame?.invoke(f)
             parser.accept(f)
