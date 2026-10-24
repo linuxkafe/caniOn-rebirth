@@ -3,6 +3,7 @@ package org.caniorebirth.android
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import android.bluetooth.BluetoothAdapter
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -39,6 +40,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sectionMap: android.widget.LinearLayout
     private lateinit var tvHeater: android.widget.TextView
     private lateinit var tvCellSummary: android.widget.TextView
+    private lateinit var tvGear: android.widget.TextView
+    private lateinit var tvRange: android.widget.TextView
     private lateinit var tvVehicle: android.widget.TextView
     private lateinit var chartSoc: SignalChartView
     private lateinit var chartVolt: SignalChartView
@@ -83,7 +86,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
-        AppCompatDelegate.setDefaultNightMode(if (prefs.getBoolean("dark_mode", false)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        AppCompatDelegate.setDefaultNightMode(if (prefs.getBoolean("dark_mode", true)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO)
         if (prefs.getBoolean("force_landscape", false)) {
             requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
@@ -103,6 +106,8 @@ class MainActivity : AppCompatActivity() {
         sectionMap = findViewById(R.id.sectionMap)
         tvHeater = findViewById(R.id.tvHeater)
         tvCellSummary = findViewById(R.id.tvCellSummary)
+        tvGear = findViewById(R.id.tvGear)
+        tvRange = findViewById(R.id.tvRange)
         tvVehicle = findViewById(R.id.tvVehicle)
         tabLayout.addTab(tabLayout.newTab().setText("Dashboard"))
         tabLayout.addTab(tabLayout.newTab().setText("Cells"))
@@ -169,6 +174,18 @@ class MainActivity : AppCompatActivity() {
         gaugeAcPower.max = 5000f
 
         status.text = "Ready"
+        tryAutoConnect()
+    }
+
+    private fun tryAutoConnect() {
+        val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
+        val addr = prefs.getString("last_device", null) ?: return
+        val needed = permissions()
+        val missing = needed.filter { checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) return
+        val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
+        val device = try { adapter.getRemoteDevice(addr) } catch (e: Exception) { null } ?: return
+        connectTo(device)
     }
 
     private fun permissions(): List<String> = buildList {
@@ -242,6 +259,8 @@ class MainActivity : AppCompatActivity() {
                 cellTempGrid.setVoltages(sig.cellTemperatures.map { it?.toDouble() })
             val cellVs = sig.cellVoltages.filterNotNull()
             val temps = sig.cellTemperatures.filterNotNull()
+            sig.gear?.let { tvGear.text = it.toString() }
+            sig.odometerMiles?.let { tvRange.text = "%.0f km".format(it * 1.60934) }
             tvCellSummary.text = buildString {
                 append("Cells V: ")
                 append("min ${cellVs.minOrNull()?.let { "%.3f".format(it) } ?: "--"}  ")
@@ -290,6 +309,7 @@ class MainActivity : AppCompatActivity() {
                 sendToVeilService(sig, parser.getCurrentErrors())
             }
         }
+        getSharedPreferences("veil_prefs", MODE_PRIVATE).edit().putString("last_device", device.address).apply()
         status.text = "Connecting to ${device.name}…"
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             try {

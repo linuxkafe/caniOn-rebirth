@@ -94,6 +94,32 @@
                         android:layout_weight="1" />
                 </LinearLayout>
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="4dp">
+
+                    <TextView
+                        android:id="@+id/tvGear"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="P"
+                        android:textSize="48sp"
+                        android:textStyle="bold"
+                        android:textColor="#00E676"
+                        android:layout_marginEnd="24dp" />
+
+                    <TextView
+                        android:id="@+id/tvRange"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-- km"
+                        android:textSize="24sp"
+                        android:textColor="#00E676" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/tvCellSummary"
                     android:layout_width="match_parent"
