@@ -56,9 +56,10 @@ class SettingsActivity : AppCompatActivity() {
 
         btnVeilidTest.setOnClickListener {
             val result = VeilidBridge.veilidInit("canion", "rebirth")
+            val attachResult = if (result == 0) VeilidBridge.veilidAttach() else -1
             val version = VeilidBridge.veilidVersion()
             val state = VeilidBridge.veilidGetState()
-            Toast.makeText(this, "Veilid init: $result, version: $version, state: $state", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Veilid init: $result, attach: $attachResult, version: $version, state: $state", Toast.LENGTH_LONG).show()
         }
 
         btnSave.setOnClickListener {
