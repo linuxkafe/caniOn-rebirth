@@ -47,6 +47,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gaugeRpm: GaugeView
     private lateinit var gaugePower: GaugeView
     private lateinit var gaugeCurrent: GaugeView
+    private lateinit var gaugeAux: GaugeView
+    private lateinit var gaugeAcPower: GaugeView
 
     private val socHistory = mutableListOf<Float>()
     private val voltHistory = mutableListOf<Float>()
@@ -142,6 +144,8 @@ class MainActivity : AppCompatActivity() {
         gaugeRpm.max = 8000f
         gaugePower = findViewById(R.id.gaugePower)
         gaugeCurrent = findViewById(R.id.gaugeCurrent)
+        gaugeAux = findViewById(R.id.gaugeAux)
+        gaugeAcPower = findViewById(R.id.gaugeAcPower)
         gaugePower.label = "Power"
         gaugePower.unit = "W"
         gaugePower.min = -20000f
@@ -150,6 +154,16 @@ class MainActivity : AppCompatActivity() {
         gaugeCurrent.unit = "A"
         gaugeCurrent.min = -150f
         gaugeCurrent.max = 150f
+        gaugeAux = findViewById(R.id.gaugeAux)
+        gaugeAcPower = findViewById(R.id.gaugeAcPower)
+        gaugeAux.label = "Aux Batt"
+        gaugeAux.unit = "V"
+        gaugeAux.min = 0f
+        gaugeAux.max = 20f
+        gaugeAcPower.label = "AC Power"
+        gaugeAcPower.unit = "W"
+        gaugeAcPower.min = 0f
+        gaugeAcPower.max = 5000f
 
         status.text = "Ready"
     }
@@ -245,6 +259,8 @@ class MainActivity : AppCompatActivity() {
                 sig.motorRpm?.let { gaugeRpm.value = it.toFloat() }
                 sig.packPower?.let { gaugePower.value = it.toFloat() }
                 sig.packCurrent?.let { gaugeCurrent.value = it.toFloat() }
+                sig.auxBatteryVoltage?.let { gaugeAux.value = it.toFloat() }
+                sig.acPower?.let { gaugeAcPower.value = kotlin.math.abs(it).toFloat() }
                 sig.packVoltage?.let { voltHistory.add(it.toFloat()); if (voltHistory.size > maxHistory) voltHistory.removeAt(0) }
                 sig.packCurrent?.let { currHistory.add(it.toFloat()); if (currHistory.size > maxHistory) currHistory.removeAt(0) }
                 val cells = sig.cellVoltages.filterNotNull()
