@@ -42,9 +42,6 @@
             android:label="@string/title_map"
             android:parentActivityName=".MainActivity" />
 
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_GOOGLE_MAPS_KEY" />
     </application>
 
 </manifest>

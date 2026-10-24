@@ -24,6 +24,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var status: TextView
     private lateinit var readout: TextView
     private lateinit var errorsView: TextView
+    private lateinit var cellGrid: CellGridView
+    private lateinit var chartSoc: SignalChartView
+    private lateinit var chartVolt: SignalChartView
+    private lateinit var chartCurr: SignalChartView
+
+    private val socHistory = mutableListOf<Float>()
+    private val voltHistory = mutableListOf<Float>()
+    private val currHistory = mutableListOf<Float>()
+    private val maxHistory = 120
 
     private var client: ObdClient? = null
     private var transport: BluetoothObdTransport? = null
@@ -47,6 +56,10 @@ class MainActivity : AppCompatActivity() {
         status = findViewById(R.id.tvStatus)
         readout = findViewById(R.id.tvReadout)
         errorsView = findViewById(R.id.tvErrors)
+        cellGrid = findViewById(R.id.cellGrid)
+        chartSoc = findViewById(R.id.chartSoc)
+        chartVolt = findViewById(R.id.chartVolt)
+        chartCurr = findViewById(R.id.chartCurr)
 
         status.text = "Ready"
     }
@@ -79,7 +92,15 @@ class MainActivity : AppCompatActivity() {
             val signals = parser.signals()
             runOnUiThread { readout.text = describe(parser.signals()) }
             updateErrorsView(parser.getCurrentErrors())
-            sendToVeilService(parser.signals(), parser.getCurrentErrors())
+            val sig = parser.signals()
+            cellGrid.setVoltages(sig.cellVoltages)
+            sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0) }
+            sig.packVoltage?.let { voltHistory.add(it.toFloat()); if (voltHistory.size > maxHistory) voltHistory.removeAt(0) }
+            sig.packCurrent?.let { currHistory.add(it.toFloat()); if (currHistory.size > maxHistory) currHistory.removeAt(0) }
+            chartSoc.setData(ArrayList(socHistory), "SOC")
+            chartVolt.setData(ArrayList(voltHistory), "V")
+            chartCurr.setData(ArrayList(currHistory), "A")
+            sendToVeilService(sig, parser.getCurrentErrors())
         }
         status.text = "Connecting to ${device.name}…"
         c.start()

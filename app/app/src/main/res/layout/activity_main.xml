@@ -1,39 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/tvStatus"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ready"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
+        android:orientation="vertical"
+        android:padding="12dp">
 
-    <TextView
-        android:id="@+id/tvReadout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textSize="14sp"
-        android:layout_marginBottom="16dp" />
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ready"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
 
-    <TextView
-        android:id="@+id/tvErrors"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="No errors"
-        android:textSize="14sp"
-        android:layout_marginBottom="16dp" />
+        <TextView
+            android:id="@+id/tvReadout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="13sp"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="8dp" />
 
-    <fragment
-        android:id="@+id/map"
-        android:name="org.caniorebirth.android.MapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_marginTop="16dp" />
-</LinearLayout>
+        <TextView
+            android:id="@+id/tvErrors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No errors"
+            android:textSize="13sp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cell voltages (V)"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp" />
+
+        <org.caniorebirth.android.CellGridView
+            android:id="@+id/cellGrid"
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SOC %"
+            android:textStyle="bold" />
+
+        <org.caniorebirth.android.SignalChartView
+            android:id="@+id/chartSoc"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pack voltage (V)"
+            android:textStyle="bold" />
+
+        <org.caniorebirth.android.SignalChartView
+            android:id="@+id/chartVolt"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pack current (A)"
+            android:textStyle="bold" />
+
+        <org.caniorebirth.android.SignalChartView
+            android:id="@+id/chartCurr"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:layout_marginBottom="8dp" />
+
+        <fragment
+            android:id="@+id/map"
+            android:name="org.caniorebirth.android.MapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+</ScrollView>
