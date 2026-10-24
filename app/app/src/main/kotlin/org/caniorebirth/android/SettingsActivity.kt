@@ -32,6 +32,7 @@ class SettingsActivity : AppCompatActivity() {
         val swVeilSend = findViewById<Switch>(R.id.swVeilSend)
         val swFileLog = findViewById<Switch>(R.id.swFileLog)
         val btnForgetDevice = findViewById<Button>(R.id.btnForgetDevice)
+        val btnVeilidTest = findViewById<Button>(R.id.btnVeilidTest)
         val etOdometerDivisor = findViewById<EditText>(R.id.etOdometerDivisor)
         val sw96Cell = findViewById<Switch>(R.id.sw96Cell)
         val btnSave = findViewById<Button>(R.id.btnSave)
@@ -51,6 +52,13 @@ class SettingsActivity : AppCompatActivity() {
         btnForgetDevice.setOnClickListener {
             prefs.edit().remove("last_device").apply()
             Toast.makeText(this, "Device forgotten", Toast.LENGTH_SHORT).show()
+        }
+
+        btnVeilidTest.setOnClickListener {
+            val result = VeilidBridge.veilidInit("canion", "rebirth")
+            val version = VeilidBridge.veilidVersion()
+            val state = VeilidBridge.veilidGetState()
+            Toast.makeText(this, "Veilid init: $result, version: $version, state: $state", Toast.LENGTH_LONG).show()
         }
 
         btnSave.setOnClickListener {

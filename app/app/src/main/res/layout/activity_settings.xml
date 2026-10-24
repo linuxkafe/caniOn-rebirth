@@ -115,6 +115,13 @@
             android:text="Force 96-cell pack" />
 
         <Button
+            android:id="@+id/btnVeilidTest"
+            android:text="Test Veilid Init"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <Button
             android:id="@+id/btnSave"
             android:text="Save"
             android:layout_width="match_parent"

@@ -35,3 +35,4 @@ reference/
 
 # The emulator is told to install the app; the debug directory lives on the
 # device, not here.
+jniLibs/
