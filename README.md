@@ -37,6 +37,21 @@ See **[INSTALL.md](INSTALL.md)** for the install procedure, the expected file
 size and SHA-256, and what to do if the phone reports *"a problem occurred while
 analysing the package"*.
 
+## Pre-built APK
+
+A ready-to-install APK (debug-signed) is available on the
+[Releases](https://github.com/linuxkafe/caniOn-rebirth/releases) page:
+
+- `caniOn_Rebirth_testing.apk` — open-source Kotlin client (debug)
+- `caniOn_Rebirth_release.apk` — open-source Kotlin client (release, signed)
+- `caniOn_152_patched_icon.apk` — original caniOn v152 patched for ELM327 + new icon
+
+The Kotlin client includes: OBD/BT connection, ZEV CAN protocol decoder, 6 radial
+gauges (SOC, RPM, Power, Current, Aux Battery, AC Power), cell voltage/temperature
+grids with tap detail, 4 signal charts with zoom/pan, GPS + osmdroid map with
+Organic Maps handoff, CAN error panel (read/clear), Veil telemetry service
+integration, preferences, dark mode, CSV export and an i-MiEV themed icon.
+
 ## Debugging
 
 caniOn has three diagnostic channels, all of which work on the patched build
