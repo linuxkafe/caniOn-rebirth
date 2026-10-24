@@ -144,8 +144,6 @@ class MainActivity : AppCompatActivity() {
         gaugeRpm.max = 8000f
         gaugePower = findViewById(R.id.gaugePower)
         gaugeCurrent = findViewById(R.id.gaugeCurrent)
-        gaugeAux = findViewById(R.id.gaugeAux)
-        gaugeAcPower = findViewById(R.id.gaugeAcPower)
         gaugePower.label = "Power"
         gaugePower.unit = "W"
         gaugePower.min = -20000f
