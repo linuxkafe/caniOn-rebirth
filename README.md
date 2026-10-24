@@ -44,7 +44,6 @@ A ready-to-install APK (debug-signed) is available on the
 
 - `caniOn_Rebirth_testing.apk` — open-source Kotlin client (debug)
 - `caniOn_Rebirth_release.apk` — open-source Kotlin client (release, signed)
-- `caniOn_152_patched_icon.apk` — original caniOn v152 patched for ELM327 + new icon
 
 The Kotlin client includes: OBD/BT connection, ZEV CAN protocol decoder, 6 radial
 gauges (SOC, RPM, Power, Current, Aux Battery, AC Power), cell voltage/temperature
