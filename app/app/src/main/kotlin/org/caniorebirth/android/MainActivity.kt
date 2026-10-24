@@ -85,6 +85,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        CrashLogger.install(this)
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         AppCompatDelegate.setDefaultNightMode(if (prefs.getBoolean("dark_mode", true)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO)
         if (prefs.getBoolean("force_landscape", false)) {
@@ -251,6 +252,7 @@ class MainActivity : AppCompatActivity() {
         c.onAdapterError = { line -> runOnUiThread { status.text = "Adapter said: $line" } }
         c.onFrame = { frame ->
             runOnUiThread {
+                try {
                 val sig = parser.signals()
                 readout.text = describe(sig)
                 updateErrorsView(parser.getCurrentErrors())
@@ -307,6 +309,9 @@ class MainActivity : AppCompatActivity() {
                 chartCurr.setData(ArrayList(currHistory), "A")
                 chartCellSpread.setData(ArrayList(cellSpreadHistory), "spread")
                 sendToVeilService(sig, parser.getCurrentErrors())
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "onFrame error", e)
+                }
             }
         }
         getSharedPreferences("veil_prefs", MODE_PRIVATE).edit().putString("last_device", device.address).apply()
