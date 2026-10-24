@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 
 /**
@@ -28,10 +29,34 @@ class CellGridView @JvmOverloads constructor(
         textAlign = Paint.Align.CENTER
     }
     private var voltages: List<Double?> = emptyList()
+    private var temperatures: List<Double?> = emptyList()
+    var onCellClick: ((index: Int, voltage: Double?, temperature: Double?) -> Unit)? = null
 
     fun setVoltages(v: List<Double?>) {
         voltages = v
         invalidate()
+    }
+
+    fun setTemperatures(t: List<Double?>) {
+        temperatures = t
+        invalidate()
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.action == MotionEvent.ACTION_DOWN) {
+            val cols = 8
+            val rows = 12
+            val cellW = width / cols.toFloat()
+            val cellH = height / rows.toFloat()
+            val col = (event.x / cellW).toInt().coerceIn(0, cols - 1)
+            val row = (event.y / cellH).toInt().coerceIn(0, rows - 1)
+            val idx = row * cols + col
+            if (idx < voltages.size) {
+                onCellClick?.invoke(idx, voltages.getOrElse(idx) { null }, temperatures.getOrElse(idx) { null })
+            }
+            return true
+        }
+        return super.onTouchEvent(event)
     }
 
     override fun onDraw(canvas: Canvas) {

@@ -103,6 +103,18 @@
             android:layout_height="140dp"
             android:layout_marginBottom="8dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cell voltage spread (max-min, V)"
+            android:textStyle="bold" />
+
+        <org.caniorebirth.android.SignalChartView
+            android:id="@+id/chartCellSpread"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:layout_marginBottom="8dp" />
+
         <fragment
             android:id="@+id/map"
             android:name="org.caniorebirth.android.MapFragment"

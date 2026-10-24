@@ -34,10 +34,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var chartSoc: SignalChartView
     private lateinit var chartVolt: SignalChartView
     private lateinit var chartCurr: SignalChartView
+    private lateinit var chartCellSpread: SignalChartView
 
     private val socHistory = mutableListOf<Float>()
     private val voltHistory = mutableListOf<Float>()
     private val currHistory = mutableListOf<Float>()
+    private val cellSpreadHistory = mutableListOf<Float>()
     private val maxHistory = 120
 
     private var client: ObdClient? = null
@@ -77,10 +79,18 @@ class MainActivity : AppCompatActivity() {
         startLocationTracking()
         cellGrid = findViewById(R.id.cellGrid)
         cellTempGrid = findViewById(R.id.cellTempGrid)
+        cellGrid.onCellClick = { idx, v, t ->
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Cell ${idx + 1}")
+                .setMessage("Voltage: ${v?.let { "%.3f V".format(it) } ?: "--"}\nTemperature: ${t?.let { "%.1f C".format(it) } ?: "--"}")
+                .setPositiveButton("OK", null)
+                .show()
+        }
         cellTempGrid.mode = CellGridMode.TEMPERATURE
         chartSoc = findViewById(R.id.chartSoc)
         chartVolt = findViewById(R.id.chartVolt)
         chartCurr = findViewById(R.id.chartCurr)
+        chartCellSpread = findViewById(R.id.chartCellSpread)
 
         status.text = "Ready"
     }
@@ -144,13 +154,20 @@ class MainActivity : AppCompatActivity() {
             updateErrorsView(parser.getCurrentErrors())
             val sig = parser.signals()
             cellGrid.setVoltages(sig.cellVoltages)
+            cellGrid.setTemperatures(sig.cellTemperatures.map { it?.toDouble() })
             cellTempGrid.setVoltages(sig.cellTemperatures.map { it?.toDouble() })
             sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0) }
             sig.packVoltage?.let { voltHistory.add(it.toFloat()); if (voltHistory.size > maxHistory) voltHistory.removeAt(0) }
             sig.packCurrent?.let { currHistory.add(it.toFloat()); if (currHistory.size > maxHistory) currHistory.removeAt(0) }
+            val cells = sig.cellVoltages.filterNotNull()
+            if (cells.size >= 2) {
+                val spread = (cells.maxOrNull()!! - cells.minOrNull()!!).toFloat()
+                cellSpreadHistory.add(spread); if (cellSpreadHistory.size > maxHistory) cellSpreadHistory.removeAt(0)
+            }
             chartSoc.setData(ArrayList(socHistory), "SOC")
             chartVolt.setData(ArrayList(voltHistory), "V")
             chartCurr.setData(ArrayList(currHistory), "A")
+            chartCellSpread.setData(ArrayList(cellSpreadHistory), "spread")
             sendToVeilService(sig, parser.getCurrentErrors())
         }
         status.text = "Connecting to ${device.name}…"
