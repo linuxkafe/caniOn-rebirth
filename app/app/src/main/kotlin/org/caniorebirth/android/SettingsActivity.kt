@@ -30,6 +30,8 @@ class SettingsActivity : AppCompatActivity() {
         val swDarkMode = findViewById<Switch>(R.id.swDarkMode)
         val swVeilSend = findViewById<Switch>(R.id.swVeilSend)
         val swFileLog = findViewById<Switch>(R.id.swFileLog)
+        val etOdometerDivisor = findViewById<EditText>(R.id.etOdometerDivisor)
+        val sw96Cell = findViewById<Switch>(R.id.sw96Cell)
         val btnSave = findViewById<Button>(R.id.btnSave)
 
         etVeilHost.setText(prefs.getString("veil_host", "10.0.2.2"))
@@ -40,6 +42,8 @@ class SettingsActivity : AppCompatActivity() {
         swDarkMode.isChecked = prefs.getBoolean("dark_mode", false)
         swVeilSend.isChecked = prefs.getBoolean("veil_send", true)
         swFileLog.isChecked = prefs.getBoolean("file_log", false)
+        etOdometerDivisor.setText(prefs.getString("odometer_divisor", "57.75"))
+        sw96Cell.isChecked = prefs.getBoolean("force_96cell", false)
 
         btnSave.setOnClickListener {
             prefs.edit()
@@ -51,6 +55,8 @@ class SettingsActivity : AppCompatActivity() {
                 .putBoolean("dark_mode", swDarkMode.isChecked)
                 .putBoolean("veil_send", swVeilSend.isChecked)
                 .putBoolean("file_log", swFileLog.isChecked)
+                .putString("odometer_divisor", etOdometerDivisor.text.toString().trim())
+                .putBoolean("force_96cell", sw96Cell.isChecked)
                 .apply()
             applyNightMode(swDarkMode.isChecked)
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()

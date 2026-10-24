@@ -79,6 +79,28 @@
             android:layout_height="wrap_content"
             android:text="Log to file (/sdcard/BT_CAN)" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Advanced"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etOdometerDivisor"
+            android:hint="Odometer divisor (default 57.75)"
+            android:inputType="numberDecimal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Switch
+            android:id="@+id/sw96Cell"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Force 96-cell pack" />
+
         <Button
             android:id="@+id/btnSave"
             android:text="Save"
