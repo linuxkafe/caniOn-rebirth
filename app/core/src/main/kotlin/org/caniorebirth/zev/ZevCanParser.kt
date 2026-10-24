@@ -48,6 +48,7 @@ class ZevCanParser(
     private val vinParts = arrayOfNulls<String>(3)
     private var vin: String? = null
 
+    @Synchronized
     fun accept(frame: CanFrame): ZevSignals {
         checkForErrors(frame)
         when (frame.id) {
@@ -125,6 +126,7 @@ class ZevCanParser(
         }
     }
 
+    @Synchronized
     fun getCurrentErrors(): List<CanBusError> = activeErrors.values.filter { !it.cleared }.toList()
 
     fun clearError(code: Int): Boolean = activeErrors[code]?.let {
@@ -137,6 +139,7 @@ class ZevCanParser(
         activeErrors.replaceAll { _, e -> e.copy(cleared = true, clearedTimestamp = ts) }
     }
 
+    @Synchronized
     fun signals(): ZevSignals = ZevSignals(
         motorRpm = motorRpm,
         packCurrent = packCurrent,
