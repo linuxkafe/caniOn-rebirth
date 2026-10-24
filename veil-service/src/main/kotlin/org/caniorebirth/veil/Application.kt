@@ -90,29 +90,34 @@ object VehicleRegistry {
         }
     }
 
+    fun restoreVehicle(vehicleId: String, state: VehicleState) {
+        vehicles[vehicleId] = state
+    }
+
     fun getVehicle(vehicleId: String): VehicleState? = vehicles[vehicleId]
 
     fun updateSignals(vehicleId: String, signals: ZevSignals, errors: List<CanBusError>) {
-        vehicles.computeIfPresent(vehicleId) { _, state ->
-            state.copy(lastUpdate = System.currentTimeMillis(), signals = signals, errors = errors)
-        } ?: run {
-            vehicles[vehicleId] = VehicleState(vehicleId = vehicleId, lastUpdate = System.currentTimeMillis(), signals = signals, errors = errors)
-        }
+        val state = vehicles.computeIfPresent(vehicleId) { _, st ->
+            st.copy(lastUpdate = System.currentTimeMillis(), signals = signals, errors = errors)
+        } ?: VehicleState(vehicleId = vehicleId, lastUpdate = System.currentTimeMillis(), signals = signals, errors = errors)
+        vehicles[vehicleId] = state
+        try { VehicleStore.save(vehicleId, state) } catch (_: Exception) {}
     }
 
     fun clearErrors(vehicleId: String): Boolean {
-        return vehicles.computeIfPresent(vehicleId) { _, state ->
+        val result = vehicles.computeIfPresent(vehicleId) { _, state ->
             state.copy(errors = emptyList())
         } != null
+        vehicles[vehicleId]?.let { try { VehicleStore.save(vehicleId, it) } catch (_: Exception) {} }
+        return result
     }
 
     fun addAppError(vehicleId: String, error: AppError) {
-        vehicles.computeIfPresent(vehicleId) { _, state ->
-            state.copy(appErrors = state.appErrors + error)
-        } ?: run {
-            val v = VehicleState(vehicleId = vehicleId, lastUpdate = System.currentTimeMillis(), appErrors = listOf(error))
-            vehicles[vehicleId] = v
-        }
+        val state = vehicles.computeIfPresent(vehicleId) { _, st ->
+            st.copy(appErrors = st.appErrors + error)
+        } ?: VehicleState(vehicleId = vehicleId, lastUpdate = System.currentTimeMillis(), appErrors = listOf(error))
+        vehicles[vehicleId] = state
+        try { VehicleStore.save(vehicleId, state) } catch (_: Exception) {}
     }
 
     fun getAppErrors(vehicleId: String): List<AppError> = vehicles[vehicleId]?.appErrors ?: emptyList()
