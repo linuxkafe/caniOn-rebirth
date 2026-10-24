@@ -123,6 +123,35 @@ format, the full CAN identifier map, the per-signal scaling, the odometer
 calibration and the cell layout. That document, not the code, is the durable
 artefact: it describes the *car*, so it can be reimplemented by anyone.
 
+## Veil telemetry service
+
+The `veil-service/` module is a Ktor micro-service that collects telemetry
+from the app:
+
+```bash
+cd veil-service
+gradle build
+java -Xmx256m -jar build/libs/veil-service-all.jar
+# Service listens on http://0.0.0.0:8100
+```
+
+The service checks if port 8100 is available before starting. Data is persisted
+in SQLite (`veil.db`). Endpoints:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| POST | `/api/vehicles/register` | Register a vehicle |
+| POST | `/api/vehicles/{id}/signals` | Update signals + CAN errors |
+| GET | `/api/vehicles/{id}` | Get vehicle state |
+| GET | `/api/vehicles/{id}/errors` | Get CAN errors |
+| POST | `/api/vehicles/{id}/errors/clear` | Clear CAN errors |
+| POST | `/api/vehicles/{id}/app-errors` | Record app error |
+| GET | `/api/vehicles/{id}/app-errors` | Get app errors |
+
+Configure the app in **Settings**: set the Veil host (PC IP), port (`8100`),
+and vehicle ID. The app sends data automatically when connected.
+
 ## Repository layout
 
 ```
