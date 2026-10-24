@@ -15,9 +15,19 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../../canion-debug.keystore")
+            storePassword = "canion-rebirth"
+            keyAlias = "canion"
+            keyPassword = "canion-rebirth"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
