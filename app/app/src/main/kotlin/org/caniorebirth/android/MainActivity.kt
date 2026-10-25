@@ -137,12 +137,31 @@ class MainActivity : AppCompatActivity() {
         if (BluetoothObdTransport.candidateAdapters(this).isEmpty()) {
             loadDemoData()
         }
-        // Auto-hide tab bar on scroll down, show on scroll up
+        // Auto-hide top bars (title + tabs) on scroll down, show on scroll up or tap near top
         val scrollView = findViewById<android.widget.ScrollView>(R.id.scrollView)
+        fun setBarsVisible(visible: Boolean) {
+            val alpha = if (visible) 1f else 0f
+            tabLayout.animate().alpha(alpha).setDuration(200).start()
+            if (visible) supportActionBar?.show() else supportActionBar?.hide()
+        }
+        var barsVisible = true
         scrollView?.viewTreeObserver?.addOnScrollChangedListener {
             val sy = scrollView.scrollY
-            if (sy > 50) tabLayout.animate().alpha(0f).setDuration(200).start()
-            else tabLayout.animate().alpha(1f).setDuration(200).start()
+            val shouldBeVisible = sy <= 50
+            if (shouldBeVisible != barsVisible) {
+                barsVisible = shouldBeVisible
+                setBarsVisible(barsVisible)
+            }
+        }
+        // Show bars when tapping near the top of the screen
+        findViewById<android.view.View>(android.R.id.content)?.setOnTouchListener { _, ev ->
+            if (ev.action == android.view.MotionEvent.ACTION_DOWN && ev.y < 120f) {
+                if (!barsVisible) {
+                    barsVisible = true
+                    setBarsVisible(true)
+                }
+            }
+            false
         }
         // Swipe left/right to move between tabs (like original)
         var downX = 0f
@@ -273,7 +292,6 @@ class MainActivity : AppCompatActivity() {
     private fun applyFullScreen(enable: Boolean) {
         try {
             if (enable) {
-                supportActionBar?.hide()
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                     window.insetsController?.let { c ->
                         c.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
@@ -289,7 +307,6 @@ class MainActivity : AppCompatActivity() {
                             or android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION)
                 }
             } else {
-                supportActionBar?.show()
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                     window.insetsController?.show(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
                 } else {
