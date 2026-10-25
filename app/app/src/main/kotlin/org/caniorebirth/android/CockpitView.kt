@@ -24,7 +24,7 @@ class CockpitView @JvmOverloads constructor(
 
     private val bgBitmap: Bitmap? = try {
         BitmapFactory.decodeResource(resources, R.drawable.cockpit)
-    } catch (_: Exception) { null }
+    } catch (_: Throwable) { null }
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {

@@ -92,7 +92,6 @@ class MainActivity : AppCompatActivity() {
         CrashLogger.install(this)
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         AppCompatDelegate.setDefaultNightMode(if (prefs.getBoolean("dark_mode", true)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO)
-        applyFullScreen(prefs.getBoolean("full_screen", false))
         if (prefs.getBoolean("force_landscape", false)) {
             requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
@@ -247,33 +246,8 @@ class MainActivity : AppCompatActivity() {
         sectionMap.visibility = if (pos == 6) android.view.View.VISIBLE else android.view.View.GONE
     }
 
-    private fun applyFullScreen(enable: Boolean) {
-        if (enable) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                window.insetsController?.let { c ->
-                    c.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
-                    c.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                window.decorView.systemUiVisibility = (android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
-                        or android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
-            }
-        } else {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                window.insetsController?.show(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
-            } else {
-                @Suppress("DEPRECATION")
-                window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_VISIBLE
-            }
-        }
-    }
-
     override fun onResume() {
         super.onResume()
-        val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
-        applyFullScreen(prefs.getBoolean("full_screen", false))
     }
 
     private fun connect() {
