@@ -144,6 +144,24 @@ class MainActivity : AppCompatActivity() {
             if (sy > 50) tabLayout.animate().alpha(0f).setDuration(200).start()
             else tabLayout.animate().alpha(1f).setDuration(200).start()
         }
+        // Swipe left/right to move between tabs (like original)
+        var downX = 0f
+        scrollView?.setOnTouchListener { _, ev ->
+            when (ev.action) {
+                android.view.MotionEvent.ACTION_DOWN -> downX = ev.x
+                android.view.MotionEvent.ACTION_UP -> {
+                    val dx = ev.x - downX
+                    if (kotlin.math.abs(dx) > 150) {
+                        val cur = tabLayout.selectedTabPosition
+                        val next = if (dx < 0) cur + 1 else cur - 1
+                        if (next in 0 until tabLayout.tabCount) {
+                            tabLayout.selectTab(tabLayout.getTabAt(next))
+                        }
+                    }
+                }
+            }
+            false
+        }
         btnConnect.setOnClickListener {
             val needed = permissions()
             val missing = needed.filter { checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
