@@ -54,8 +54,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gaugeCurrent: GaugeView
     private lateinit var gaugeAux: GaugeView
     private lateinit var gaugeAcPower: GaugeView
-    private lateinit var cockpitView: CockpitView
-    private lateinit var sectionCockpit: android.widget.LinearLayout
+    private var cockpitView: CockpitView? = null
+    private var sectionCockpit: android.widget.LinearLayout? = null
 
     private val socHistory = mutableListOf<Float>()
     private val voltHistory = mutableListOf<Float>()
@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSection(pos: Int) {
         sectionDashboard.visibility = if (pos == 0) android.view.View.VISIBLE else android.view.View.GONE
-        sectionCockpit.visibility = if (pos == 1) android.view.View.VISIBLE else android.view.View.GONE
+        sectionCockpit?.visibility = if (pos == 1) android.view.View.VISIBLE else android.view.View.GONE
         sectionCharts?.visibility = if (pos == 2) android.view.View.VISIBLE else android.view.View.GONE
         sectionCells.visibility = if (pos == 3) android.view.View.VISIBLE else android.view.View.GONE
         sectionHeater.visibility = if (pos == 4) android.view.View.VISIBLE else android.view.View.GONE
@@ -318,14 +318,14 @@ class MainActivity : AppCompatActivity() {
                     appendLine("Pack         : ${if (sig.is96CellPack == true) "96-cell" else "24-cell"}")
                     appendLine("Cells known  : ${sig.cellVoltages.count { it != null }}")
                 }
-                sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat(); cockpitView.soc = it.toFloat() }
-                sig.motorRpm?.let { gaugeRpm.value = it.toFloat(); cockpitView.speedKmh = (it / 10f) }
-                sig.packPower?.let { gaugePower.value = it.toFloat(); cockpitView.powerKw = (it / 1000.0).toFloat() }
-                sig.gear?.let { cockpitView.gear = it.toString() }
-                sig.chargingFlag?.let { cockpitView.charging = it }
-                sig.odometerMiles?.let { cockpitView.rangeKm = (it * 1.60934 * 0.15).toFloat() }
-                cockpitView.ready = true
-                cockpitView.invalidate()
+                sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat(); cockpitView?.soc = it.toFloat() }
+                sig.motorRpm?.let { gaugeRpm.value = it.toFloat(); cockpitView?.speedKmh = (it / 10f) }
+                sig.packPower?.let { gaugePower.value = it.toFloat(); cockpitView?.powerKw = (it / 1000.0).toFloat() }
+                sig.gear?.let { cockpitView?.gear = it.toString() }
+                sig.chargingFlag?.let { cockpitView?.charging = it }
+                sig.odometerMiles?.let { cockpitView?.rangeKm = (it * 1.60934 * 0.15).toFloat() }
+                cockpitView?.ready = true
+                cockpitView?.invalidate()
                 try { historyDb.insert(sig.soc, sig.packVoltage, sig.packCurrent, sig.motorRpm, sig.gear?.toString(), sig.odometerMiles?.toDouble()) } catch (_: Exception) {}
                 sig.packCurrent?.let { gaugeCurrent.value = it.toFloat() }
                 sig.auxBatteryVoltage?.let { gaugeAux.value = it.toFloat() }
@@ -559,14 +559,14 @@ class MainActivity : AppCompatActivity() {
                 append("max ${temps.maxOrNull()?.let { "%.0f".format(it) } ?: "--"}  ")
                 append("avg ${if (temps.isNotEmpty()) "%.0f".format(temps.average()) else "--"}")
             }
-            sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat(); cockpitView.soc = it.toFloat() }
-            sig.motorRpm?.let { gaugeRpm.value = it.toFloat(); cockpitView.speedKmh = (it / 10f) }
-            sig.packPower?.let { gaugePower.value = it.toFloat(); cockpitView.powerKw = (it / 1000.0).toFloat() }
-            sig.gear?.let { cockpitView.gear = it.toString() }
-            sig.chargingFlag?.let { cockpitView.charging = it }
-            sig.odometerMiles?.let { cockpitView.rangeKm = (it * 1.60934 * 0.15).toFloat() }
-            cockpitView.ready = true
-            cockpitView.invalidate()
+            sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat(); cockpitView?.soc = it.toFloat() }
+            sig.motorRpm?.let { gaugeRpm.value = it.toFloat(); cockpitView?.speedKmh = (it / 10f) }
+            sig.packPower?.let { gaugePower.value = it.toFloat(); cockpitView?.powerKw = (it / 1000.0).toFloat() }
+            sig.gear?.let { cockpitView?.gear = it.toString() }
+            sig.chargingFlag?.let { cockpitView?.charging = it }
+            sig.odometerMiles?.let { cockpitView?.rangeKm = (it * 1.60934 * 0.15).toFloat() }
+            cockpitView?.ready = true
+            cockpitView?.invalidate()
             sig.packCurrent?.let { gaugeCurrent.value = it.toFloat() }
             sig.auxBatteryVoltage?.let { gaugeAux.value = it.toFloat() }
             sig.acPower?.let { gaugeAcPower.value = kotlin.math.abs(it).toFloat() }
