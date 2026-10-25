@@ -16,4 +16,6 @@ object VeilidBridge {
     external fun veilidShutdown()
     external fun veilidVersion(): String?
     external fun veilidDhtCreate(subkeys: Int): String?
+    external fun veilidDhtSet(key: String, subkey: Int, data: String): Int
+    external fun veilidDhtGet(key: String, subkey: Int): String?
 }

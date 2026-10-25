@@ -58,9 +58,13 @@ class SettingsActivity : AppCompatActivity() {
             val storageDir = filesDir.absolutePath
             val result = VeilidBridge.veilidInit("canion", "rebirth", storageDir)
             val attachResult = if (result == 0) VeilidBridge.veilidAttach() else -1
+            Thread.sleep(2000)
             val version = VeilidBridge.veilidVersion()
             val state = VeilidBridge.veilidGetState()
-            Toast.makeText(this, "Veilid init: $result, attach: $attachResult, version: $version, state: $state", Toast.LENGTH_LONG).show()
+            val key = if (state == 2) VeilidBridge.veilidDhtCreate(2) else null
+            val setRes = if (key != null) VeilidBridge.veilidDhtSet(key, 0, "hello from caniOn") else -9
+            val got = if (key != null) VeilidBridge.veilidDhtGet(key, 0) else null
+            Toast.makeText(this, "init:$result attach:$attachResult state:$state ver:$version key:${key?.take(20)} set:$setRes get:$got", Toast.LENGTH_LONG).show()
         }
 
         btnSave.setOnClickListener {
