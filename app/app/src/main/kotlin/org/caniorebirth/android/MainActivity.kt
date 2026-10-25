@@ -273,6 +273,7 @@ class MainActivity : AppCompatActivity() {
     private fun applyFullScreen(enable: Boolean) {
         try {
             if (enable) {
+                supportActionBar?.hide()
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                     window.insetsController?.let { c ->
                         c.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
@@ -282,9 +283,13 @@ class MainActivity : AppCompatActivity() {
                     @Suppress("DEPRECATION")
                     window.decorView.systemUiVisibility = (android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
                             or android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            or android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+                            or android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            or android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            or android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            or android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION)
                 }
             } else {
+                supportActionBar?.show()
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                     window.insetsController?.show(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
                 } else {
