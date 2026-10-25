@@ -15,4 +15,8 @@
         android:id="@+id/action_export"
         android:title="Export CSV"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_history"
+        android:title="History"
+        app:showAsAction="never" />
 </menu>

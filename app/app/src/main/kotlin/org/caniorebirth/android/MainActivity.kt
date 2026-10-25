@@ -54,6 +54,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var gaugeCurrent: GaugeView
     private lateinit var gaugeAux: GaugeView
     private lateinit var gaugeAcPower: GaugeView
+    private lateinit var cockpitView: CockpitView
+    private lateinit var sectionCockpit: android.widget.LinearLayout
 
     private val socHistory = mutableListOf<Float>()
     private val voltHistory = mutableListOf<Float>()
@@ -62,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     private val maxHistory = 120
 
     private var client: ObdClient? = null
+    private lateinit var historyDb: HistoryDb
     private var transport: BluetoothObdTransport? = null
     private val parser = ZevCanParser()
 
@@ -96,6 +99,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         sharedParser = parser
+        historyDb = HistoryDb(this)
         status = findViewById(R.id.tvStatus)
         readout = findViewById(R.id.tvReadout)
         errorsView = findViewById(R.id.tvErrors)
@@ -103,6 +107,8 @@ class MainActivity : AppCompatActivity() {
         tabLayout = findViewById(R.id.tabLayout)
         sectionCharts = findViewById(R.id.sectionCharts)
         sectionDashboard = findViewById(R.id.sectionDashboard)
+        sectionCockpit = findViewById(R.id.sectionCockpit)
+        cockpitView = findViewById(R.id.cockpitView)
         sectionCells = findViewById(R.id.sectionCells)
         sectionHeater = findViewById(R.id.sectionHeater)
         sectionVehicle = findViewById(R.id.sectionVehicle)
@@ -113,6 +119,7 @@ class MainActivity : AppCompatActivity() {
         tvRange = findViewById(R.id.tvRange)
         tvVehicle = findViewById(R.id.tvVehicle)
         tabLayout.addTab(tabLayout.newTab().setText("Dashboard"))
+        tabLayout.addTab(tabLayout.newTab().setText("Cockpit"))
         tabLayout.addTab(tabLayout.newTab().setText("Charts"))
         tabLayout.addTab(tabLayout.newTab().setText("Cells"))
         tabLayout.addTab(tabLayout.newTab().setText("Heater"))
@@ -126,6 +133,10 @@ class MainActivity : AppCompatActivity() {
             override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
         })
         showSection(0)
+        // Auto-load demo data when no Bluetooth adapter is available, for validation.
+        if (BluetoothObdTransport.candidateAdapters(this).isEmpty()) {
+            loadDemoData()
+        }
         // Auto-hide tab bar on scroll down, show on scroll up
         val scrollView = findViewById<android.widget.ScrollView>(R.id.scrollView)
         scrollView?.viewTreeObserver?.addOnScrollChangedListener {
@@ -227,11 +238,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSection(pos: Int) {
         sectionDashboard.visibility = if (pos == 0) android.view.View.VISIBLE else android.view.View.GONE
-        sectionCharts?.visibility = if (pos == 1) android.view.View.VISIBLE else android.view.View.GONE
-        sectionCells.visibility = if (pos == 2) android.view.View.VISIBLE else android.view.View.GONE
-        sectionHeater.visibility = if (pos == 3) android.view.View.VISIBLE else android.view.View.GONE
-        sectionVehicle.visibility = if (pos == 4) android.view.View.VISIBLE else android.view.View.GONE
-        sectionMap.visibility = if (pos == 5) android.view.View.VISIBLE else android.view.View.GONE
+        sectionCockpit.visibility = if (pos == 1) android.view.View.VISIBLE else android.view.View.GONE
+        sectionCharts?.visibility = if (pos == 2) android.view.View.VISIBLE else android.view.View.GONE
+        sectionCells.visibility = if (pos == 3) android.view.View.VISIBLE else android.view.View.GONE
+        sectionHeater.visibility = if (pos == 4) android.view.View.VISIBLE else android.view.View.GONE
+        sectionVehicle.visibility = if (pos == 5) android.view.View.VISIBLE else android.view.View.GONE
+        sectionMap.visibility = if (pos == 6) android.view.View.VISIBLE else android.view.View.GONE
     }
 
     private fun connect() {
@@ -302,9 +314,15 @@ class MainActivity : AppCompatActivity() {
                     appendLine("Pack         : ${if (sig.is96CellPack == true) "96-cell" else "24-cell"}")
                     appendLine("Cells known  : ${sig.cellVoltages.count { it != null }}")
                 }
-                sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat() }
-                sig.motorRpm?.let { gaugeRpm.value = it.toFloat() }
-                sig.packPower?.let { gaugePower.value = it.toFloat() }
+                sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat(); cockpitView.soc = it.toFloat() }
+                sig.motorRpm?.let { gaugeRpm.value = it.toFloat(); cockpitView.speedKmh = (it / 10f) }
+                sig.packPower?.let { gaugePower.value = it.toFloat(); cockpitView.powerKw = (it / 1000.0).toFloat() }
+                sig.gear?.let { cockpitView.gear = it.toString() }
+                sig.chargingFlag?.let { cockpitView.charging = it }
+                sig.odometerMiles?.let { cockpitView.rangeKm = (it * 1.60934 * 0.15).toFloat() }
+                cockpitView.ready = true
+                cockpitView.invalidate()
+                try { historyDb.insert(sig.soc, sig.packVoltage, sig.packCurrent, sig.motorRpm, sig.gear?.toString(), sig.odometerMiles?.toDouble()) } catch (_: Exception) {}
                 sig.packCurrent?.let { gaugeCurrent.value = it.toFloat() }
                 sig.auxBatteryVoltage?.let { gaugeAux.value = it.toFloat() }
                 sig.acPower?.let { gaugeAcPower.value = kotlin.math.abs(it).toFloat() }
@@ -425,6 +443,15 @@ class MainActivity : AppCompatActivity() {
             exportCsv()
             true
         }
+        R.id.action_history -> {
+            val rows = historyDb.recent(50)
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("History (last ${rows.size})")
+                .setMessage(rows.joinToString("\n").ifEmpty { "No samples yet" })
+                .setPositiveButton("OK", null)
+                .show()
+            true
+        }
         else -> super.onOptionsItemSelected(item)
     }
 
@@ -522,9 +549,14 @@ class MainActivity : AppCompatActivity() {
                 append("max ${temps.maxOrNull()?.let { "%.0f".format(it) } ?: "--"}  ")
                 append("avg ${if (temps.isNotEmpty()) "%.0f".format(temps.average()) else "--"}")
             }
-            sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat() }
-            sig.motorRpm?.let { gaugeRpm.value = it.toFloat() }
-            sig.packPower?.let { gaugePower.value = it.toFloat() }
+            sig.soc?.let { socHistory.add(it.toFloat()); if (socHistory.size > maxHistory) socHistory.removeAt(0); gaugeSoc.value = it.toFloat(); cockpitView.soc = it.toFloat() }
+            sig.motorRpm?.let { gaugeRpm.value = it.toFloat(); cockpitView.speedKmh = (it / 10f) }
+            sig.packPower?.let { gaugePower.value = it.toFloat(); cockpitView.powerKw = (it / 1000.0).toFloat() }
+            sig.gear?.let { cockpitView.gear = it.toString() }
+            sig.chargingFlag?.let { cockpitView.charging = it }
+            sig.odometerMiles?.let { cockpitView.rangeKm = (it * 1.60934 * 0.15).toFloat() }
+            cockpitView.ready = true
+            cockpitView.invalidate()
             sig.packCurrent?.let { gaugeCurrent.value = it.toFloat() }
             sig.auxBatteryVoltage?.let { gaugeAux.value = it.toFloat() }
             sig.acPower?.let { gaugeAcPower.value = kotlin.math.abs(it).toFloat() }

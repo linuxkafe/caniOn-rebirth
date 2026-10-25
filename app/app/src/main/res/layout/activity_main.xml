@@ -149,6 +149,18 @@
 
             </LinearLayout>
 
+            <!-- COCKPIT -->
+            <LinearLayout
+                android:id="@+id/sectionCockpit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <org.caniorebirth.android.CockpitView
+                    android:id="@+id/cockpitView"
+                    android:layout_width="match_parent"
+                    android:layout_height="400dp" />
+            </LinearLayout>
+
             <!-- CHARTS -->
             <LinearLayout
                 android:id="@+id/sectionCharts"

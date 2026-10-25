@@ -55,7 +55,8 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         btnVeilidTest.setOnClickListener {
-            val result = VeilidBridge.veilidInit("canion", "rebirth")
+            val storageDir = filesDir.absolutePath
+            val result = VeilidBridge.veilidInit("canion", "rebirth", storageDir)
             val attachResult = if (result == 0) VeilidBridge.veilidAttach() else -1
             val version = VeilidBridge.veilidVersion()
             val state = VeilidBridge.veilidGetState()

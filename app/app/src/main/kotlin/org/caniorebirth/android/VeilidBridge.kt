@@ -9,10 +9,11 @@ object VeilidBridge {
         }
     }
 
-    external fun veilidInit(programName: String, namespace: String): Int
+    external fun veilidInit(programName: String, namespace: String, storageDir: String): Int
     external fun veilidAttach(): Int
     external fun veilidDetach(): Int
     external fun veilidGetState(): Int
     external fun veilidShutdown()
     external fun veilidVersion(): String?
+    external fun veilidDhtCreate(subkeys: Int): String?
 }
