@@ -379,7 +379,7 @@ class MainActivity : AppCompatActivity() {
     private fun sendToVeilid(signals: ZevSignals, errors: List<CanBusError>) {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         if (!prefs.getBoolean("veil_send", true)) return
-        if (!prefs.getBoolean("veilid_enabled", true)) return
+        if (!prefs.getBoolean("veilid_enabled", false)) return
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (VeilidBridge.veilidGetState() != 2) {
@@ -407,7 +407,7 @@ class MainActivity : AppCompatActivity() {
     private fun sendAppError(tag: String, message: String, stackTrace: String? = null) {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         if (!prefs.getBoolean("veil_send", true)) return
-        if (!prefs.getBoolean("veilid_enabled", true)) return
+        if (!prefs.getBoolean("veilid_enabled", false)) return
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (VeilidBridge.veilidGetState() != 2) {

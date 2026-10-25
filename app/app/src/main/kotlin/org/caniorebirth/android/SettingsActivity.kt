@@ -22,9 +22,6 @@ class SettingsActivity : AppCompatActivity() {
 
         prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
 
-        val etVeilHost = findViewById<EditText>(R.id.etVeilHost)
-        val etVeilPort = findViewById<EditText>(R.id.etVeilPort)
-        val etVehicleId = findViewById<EditText>(R.id.etVehicleId)
         val swFahrenheit = findViewById<Switch>(R.id.swFahrenheit)
         val swKilometers = findViewById<Switch>(R.id.swKilometers)
         val swDarkMode = findViewById<Switch>(R.id.swDarkMode)
@@ -42,14 +39,11 @@ class SettingsActivity : AppCompatActivity() {
         val sw96Cell = findViewById<Switch>(R.id.sw96Cell)
         val btnSave = findViewById<Button>(R.id.btnSave)
 
-        etVeilHost.setText(prefs.getString("veil_host", "10.0.2.2"))
-        etVeilPort.setText(prefs.getString("veil_port", "8100"))
-        etVehicleId.setText(prefs.getString("vehicle_id", "VEHICLE_001"))
         swFahrenheit.isChecked = prefs.getBoolean("use_fahrenheit", false)
         swKilometers.isChecked = prefs.getBoolean("use_kilometers", false)
         swDarkMode.isChecked = prefs.getBoolean("dark_mode", false)
         swFullScreen.isChecked = prefs.getBoolean("full_screen", false)
-        swVeilidEnabled.isChecked = prefs.getBoolean("veilid_enabled", true)
+        swVeilidEnabled.isChecked = prefs.getBoolean("veilid_enabled", false)
         swForceLandscape.isChecked = prefs.getBoolean("force_landscape", false)
         swVeilSend.isChecked = prefs.getBoolean("veil_send", true)
         swFileLog.isChecked = prefs.getBoolean("file_log", false)
@@ -87,11 +81,18 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        swVeilidEnabled.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Veilid telemetry")
+                    .setMessage("Veilid is a peer-to-peer network. When enabled, this app publishes SOC, battery voltage, current, RPM, gear and error count to a DHT record that can be read from anywhere in the world without opening ports.\n\nHow to access the data:\n1. Note the record key shown in Settings (or in the toast after 'Test Veilid Init').\n2. On any device running a Veilid node, call get_dht_value(record_key, subkey) for subkeys 0..7.\n3. Subkey 0 = SOC, 1 = voltage, 2 = current, 3 = RPM, 4 = has errors, 5 = odometer, 6 = gear, 7 = error count.\n\nDisable at any time to keep all data local.")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+
         btnSave.setOnClickListener {
             prefs.edit()
-                .putString("veil_host", etVeilHost.text.toString().trim())
-                .putString("veil_port", etVeilPort.text.toString().trim())
-                .putString("vehicle_id", etVehicleId.text.toString().trim())
                 .putBoolean("use_fahrenheit", swFahrenheit.isChecked)
                 .putBoolean("use_kilometers", swKilometers.isChecked)
                 .putBoolean("dark_mode", swDarkMode.isChecked)
