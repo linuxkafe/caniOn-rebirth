@@ -22,66 +22,59 @@ class CockpitView @JvmOverloads constructor(
     var blinkRight: Boolean = false
     var rangeKm: Float = 0f
 
+    private val bgBitmap: Bitmap? = try {
+        BitmapFactory.decodeResource(resources, R.drawable.cockpit)
+    } catch (_: Exception) { null }
+
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         textAlign = Paint.Align.CENTER
-    }
-    private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val w = width.toFloat()
         val h = height.toFloat()
-        val cx = w / 2f
-        val cy = h * 0.55f
+        // Draw cockpit background scaled to fit
+        bgBitmap?.let { bmp ->
+            val src = Rect(0, 0, bmp.width, bmp.height)
+            val dst = RectF(0f, 0f, w, h)
+            canvas.drawBitmap(bmp, src, dst, paint)
+        } ?: canvas.drawColor(Color.parseColor("#0a0f1a"))
 
-        // Background
-        canvas.drawColor(Color.parseColor("#0a0f1a"))
+        // Darken slightly for readability of overlays
+        paint.color = Color.argb(60, 0, 0, 0)
+        canvas.drawRect(0f, 0f, w, h, paint)
 
-        // SOC arc (top)
-        arcPaint.color = Color.parseColor("#333333")
-        arcPaint.strokeWidth = 24f
-        val socRect = RectF(cx - w * 0.35f, h * 0.05f, cx + w * 0.35f, h * 0.35f)
-        canvas.drawArc(socRect, 180f, 180f, false, arcPaint)
-        arcPaint.color = Color.parseColor("#4caf50")
-        canvas.drawArc(socRect, 180f, 180f * (soc / 100f), false, arcPaint)
-        textPaint.textSize = 28f
-        canvas.drawText("SOC ${soc.toInt()}%", cx, h * 0.22f, textPaint)
-
-        // Speed (center big)
-        textPaint.textSize = w * 0.18f
+        // Speed (large, center-ish)
+        textPaint.textSize = w * 0.12f
         textPaint.color = Color.WHITE
-        canvas.drawText("${speedKmh.toInt()}", cx, cy + w * 0.06f, textPaint)
-        textPaint.textSize = 24f
-        canvas.drawText("km/h", cx, cy + w * 0.12f, textPaint)
+        canvas.drawText("${speedKmh.toInt()}", w * 0.5f, h * 0.55f, textPaint)
+        textPaint.textSize = 18f
+        canvas.drawText("km/h", w * 0.5f, h * 0.6f, textPaint)
 
         // Gear
-        textPaint.textSize = 48f
+        textPaint.textSize = 40f
         textPaint.color = Color.parseColor("#ffeb3b")
-        canvas.drawText(gear, cx, cy - w * 0.18f, textPaint)
+        canvas.drawText(gear, w * 0.5f, h * 0.35f, textPaint)
 
-        // Power arc (bottom)
-        arcPaint.color = Color.parseColor("#333333")
-        arcPaint.strokeWidth = 16f
-        val pRect = RectF(cx - w * 0.4f, h * 0.7f, cx + w * 0.4f, h * 0.95f)
-        canvas.drawArc(pRect, 180f, 180f, false, arcPaint)
-        val frac = (powerKw / 50f).coerceIn(-1f, 1f)
-        arcPaint.color = if (frac >= 0) Color.parseColor("#f44336") else Color.parseColor("#2196f3")
-        canvas.drawArc(pRect, 180f, 180f * frac, false, arcPaint)
+        // SOC (top right area)
         textPaint.textSize = 22f
-        textPaint.color = Color.WHITE
-        canvas.drawText("${powerKw.toInt()} kW", cx, h * 0.88f, textPaint)
+        textPaint.color = Color.parseColor("#4caf50")
+        canvas.drawText("SOC ${soc.toInt()}%", w * 0.82f, h * 0.25f, textPaint)
+
+        // Power (bottom)
+        textPaint.textSize = 20f
+        textPaint.color = if (powerKw >= 0) Color.parseColor("#f44336") else Color.parseColor("#2196f3")
+        canvas.drawText("${powerKw.toInt()} kW", w * 0.5f, h * 0.85f, textPaint)
 
         // Range
-        textPaint.textSize = 20f
-        canvas.drawText("Range ${rangeKm.toInt()} km", cx, h * 0.98f, textPaint)
+        textPaint.textSize = 16f
+        textPaint.color = Color.WHITE
+        canvas.drawText("Range ${rangeKm.toInt()} km", w * 0.5f, h * 0.92f, textPaint)
 
-        // Indicators row
-        val indY = h * 0.02f
+        // Indicators
         val indicators = listOf(
             "READY" to ready,
             "CHG" to charging,
@@ -92,13 +85,14 @@ class CockpitView @JvmOverloads constructor(
             "R" to blinkRight
         )
         val spacing = w / (indicators.size + 1)
-        textPaint.textSize = 16f
+        textPaint.textSize = 14f
         indicators.forEachIndexed { i, (label, on) ->
             val x = spacing * (i + 1)
-            paint.color = if (on) Color.parseColor("#4caf50") else Color.parseColor("#444444")
-            canvas.drawCircle(x, indY + 12f, 10f, paint)
+            val y = h * 0.08f
+            paint.color = if (on) Color.parseColor("#4caf50") else Color.parseColor("#555555")
+            canvas.drawCircle(x, y, 8f, paint)
             textPaint.color = if (on) Color.WHITE else Color.GRAY
-            canvas.drawText(label, x, indY + 40f, textPaint)
+            canvas.drawText(label, x, y + 22f, textPaint)
         }
     }
 }

@@ -34,6 +34,7 @@ class SettingsActivity : AppCompatActivity() {
         val btnForgetDevice = findViewById<Button>(R.id.btnForgetDevice)
         val btnVeilidTest = findViewById<Button>(R.id.btnVeilidTest)
         val etOdometerDivisor = findViewById<EditText>(R.id.etOdometerDivisor)
+        val etLogDir = findViewById<EditText>(R.id.etLogDir)
         val sw96Cell = findViewById<Switch>(R.id.sw96Cell)
         val btnSave = findViewById<Button>(R.id.btnSave)
 
@@ -47,6 +48,7 @@ class SettingsActivity : AppCompatActivity() {
         swVeilSend.isChecked = prefs.getBoolean("veil_send", true)
         swFileLog.isChecked = prefs.getBoolean("file_log", false)
         etOdometerDivisor.setText(prefs.getString("odometer_divisor", "57.75"))
+        etLogDir.setText(prefs.getString("log_dir", ""))
         sw96Cell.isChecked = prefs.getBoolean("force_96cell", false)
 
         btnForgetDevice.setOnClickListener {
@@ -79,6 +81,7 @@ class SettingsActivity : AppCompatActivity() {
                 .putBoolean("veil_send", swVeilSend.isChecked)
                 .putBoolean("file_log", swFileLog.isChecked)
                 .putString("odometer_divisor", etOdometerDivisor.text.toString().trim())
+                .putString("log_dir", etLogDir.text.toString().trim())
                 .putBoolean("force_96cell", sw96Cell.isChecked)
                 .apply()
             applyNightMode(swDarkMode.isChecked)
