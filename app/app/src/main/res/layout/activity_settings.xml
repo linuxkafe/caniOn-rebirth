@@ -112,6 +112,11 @@
             android:hint="Crash log directory (default app files)"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+        <EditText
+            android:id="@+id/etVeilidRecordKey"
+            android:hint="Veilid DHT record key (leave empty to auto-create)"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
         <Switch
             android:id="@+id/sw96Cell"
@@ -122,6 +127,12 @@
         <Button
             android:id="@+id/btnVeilidTest"
             android:text="Test Veilid Init"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+        <Button
+            android:id="@+id/btnOpenLogDir"
+            android:text="Open log folder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp" />

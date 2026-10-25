@@ -33,8 +33,10 @@ class SettingsActivity : AppCompatActivity() {
         val swFileLog = findViewById<Switch>(R.id.swFileLog)
         val btnForgetDevice = findViewById<Button>(R.id.btnForgetDevice)
         val btnVeilidTest = findViewById<Button>(R.id.btnVeilidTest)
+        val btnOpenLogDir = findViewById<Button>(R.id.btnOpenLogDir)
         val etOdometerDivisor = findViewById<EditText>(R.id.etOdometerDivisor)
         val etLogDir = findViewById<EditText>(R.id.etLogDir)
+        val etVeilidRecordKey = findViewById<EditText>(R.id.etVeilidRecordKey)
         val sw96Cell = findViewById<Switch>(R.id.sw96Cell)
         val btnSave = findViewById<Button>(R.id.btnSave)
 
@@ -49,6 +51,7 @@ class SettingsActivity : AppCompatActivity() {
         swFileLog.isChecked = prefs.getBoolean("file_log", false)
         etOdometerDivisor.setText(prefs.getString("odometer_divisor", "57.75"))
         etLogDir.setText(prefs.getString("log_dir", ""))
+        etVeilidRecordKey.setText(prefs.getString("veilid_record_key", ""))
         sw96Cell.isChecked = prefs.getBoolean("force_96cell", false)
 
         btnForgetDevice.setOnClickListener {
@@ -69,6 +72,17 @@ class SettingsActivity : AppCompatActivity() {
             Toast.makeText(this, "init:$result attach:$attachResult state:$state ver:$version key:${key?.take(20)} set:$setRes get:$got", Toast.LENGTH_LONG).show()
         }
 
+        btnOpenLogDir.setOnClickListener {
+            val dir = CrashLogger.logDir(this)
+            dir.mkdirs()
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
+            intent.setDataAndType(android.net.Uri.fromFile(dir), "*/*")
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            try { startActivity(intent) } catch (e: Exception) {
+                Toast.makeText(this, "No file manager available: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         btnSave.setOnClickListener {
             prefs.edit()
                 .putString("veil_host", etVeilHost.text.toString().trim())
@@ -82,6 +96,7 @@ class SettingsActivity : AppCompatActivity() {
                 .putBoolean("file_log", swFileLog.isChecked)
                 .putString("odometer_divisor", etOdometerDivisor.text.toString().trim())
                 .putString("log_dir", etLogDir.text.toString().trim())
+                .putString("veilid_record_key", etVeilidRecordKey.text.toString().trim())
                 .putBoolean("force_96cell", sw96Cell.isChecked)
                 .apply()
             applyNightMode(swDarkMode.isChecked)

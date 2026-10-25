@@ -337,7 +337,7 @@ class MainActivity : AppCompatActivity() {
                 chartVolt.setData(ArrayList(voltHistory), "V")
                 chartCurr.setData(ArrayList(currHistory), "A")
                 chartCellSpread.setData(ArrayList(cellSpreadHistory), "spread")
-                sendToVeilService(sig, parser.getCurrentErrors())
+                sendToVeilid(sig, parser.getCurrentErrors())
                 } catch (e: Exception) {
                     android.util.Log.e("MainActivity", "onFrame error", e)
                 }
@@ -361,56 +361,60 @@ class MainActivity : AppCompatActivity() {
         android.widget.Toast.makeText(this, "BT error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
     }
 
-    private fun sendToVeilService(signals: ZevSignals, errors: List<CanBusError>) {
+    private fun getOrCreateVeilidRecordKey(prefs: android.content.SharedPreferences): String? {
+        val existing = prefs.getString("veilid_record_key", null)
+        if (!existing.isNullOrBlank()) return existing
+        val key = VeilidBridge.veilidDhtCreate(8)
+        if (!key.isNullOrBlank()) {
+            prefs.edit().putString("veilid_record_key", key).apply()
+        }
+        return key
+    }
+
+    private fun sendToVeilid(signals: ZevSignals, errors: List<CanBusError>) {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         if (!prefs.getBoolean("veil_send", true)) return
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val host = prefs.getString("veil_host", "10.0.2.2")
-                val port = prefs.getString("veil_port", "8100")
-                val vehicleId = prefs.getString("vehicle_id", "VEHICLE_001")
-                val url = "http://$host:$port/api/vehicles/$vehicleId/signals"
-                val connection = URL(url).openConnection() as HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json")
-                connection.doOutput = true
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-
-                val json = """{"soc":${signals.soc ?: "null"},"packVoltage":${signals.packVoltage ?: "null"},"packCurrent":${signals.packCurrent ?: "null"},"motorRpm":${signals.motorRpm ?: "null"},"hasCanBusErrors":${signals.hasCanBusErrors}}"""
-
-                connection.outputStream.use { it.write(json.toByteArray()) }
-
-                val responseCode = connection.responseCode
-                if (responseCode != 200) {
-                    Log.w("VeilService", "Failed to send data: $responseCode")
+                if (VeilidBridge.veilidGetState() != 2) {
+                    val storageDir = filesDir.absolutePath
+                    VeilidBridge.veilidInit("canion", "rebirth", storageDir)
+                    Thread.sleep(2000)
+                    VeilidBridge.veilidAttach()
+                    Thread.sleep(2000)
                 }
+                val key = getOrCreateVeilidRecordKey(prefs) ?: return@launch
+                VeilidBridge.veilidDhtSet(key, 0, (signals.soc ?: 0.0).toString())
+                VeilidBridge.veilidDhtSet(key, 1, (signals.packVoltage ?: 0.0).toString())
+                VeilidBridge.veilidDhtSet(key, 2, (signals.packCurrent ?: 0.0).toString())
+                VeilidBridge.veilidDhtSet(key, 3, (signals.motorRpm ?: 0).toString())
+                VeilidBridge.veilidDhtSet(key, 4, signals.hasCanBusErrors.toString())
+                VeilidBridge.veilidDhtSet(key, 5, (signals.odometerMiles ?: 0).toString())
+                VeilidBridge.veilidDhtSet(key, 6, (signals.gear ?: '-').toString())
+                VeilidBridge.veilidDhtSet(key, 7, errors.size.toString())
             } catch (e: Exception) {
-                Log.w("VeilService", "Failed to send data to Veil service", e)
+                android.util.Log.w("Veilid", "Failed to send data via Veilid", e)
             }
         }
     }
-
 
     private fun sendAppError(tag: String, message: String, stackTrace: String? = null) {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         if (!prefs.getBoolean("veil_send", true)) return
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val host = prefs.getString("veil_host", "10.0.2.2")
-                val port = prefs.getString("veil_port", "8100")
-                val vehicleId = prefs.getString("vehicle_id", "VEHICLE_001")
-                val url = "http://$host:$port/api/vehicles/$vehicleId/app-errors"
-                val connection = URL(url).openConnection() as HttpURLConnection
-                connection.requestMethod = "POST"
-                connection.setRequestProperty("Content-Type", "application/json")
-                connection.doOutput = true
-                connection.connectTimeout = 5000
-                connection.readTimeout = 5000
-                val escapedStack: String? = null  // stack trace sent separately via CrashLogger file
-                val json = "{\"timestamp\":" + System.currentTimeMillis() + ",\"tag\":\"" + tag + "\",\"message\":\"" + message + "\",\"stackTrace\":null}"
-                connection.outputStream.use { it.write(json.toByteArray()) }
-                connection.responseCode
+                if (VeilidBridge.veilidGetState() != 2) {
+                    val storageDir = filesDir.absolutePath
+                    VeilidBridge.veilidInit("canion", "rebirth", storageDir)
+                    Thread.sleep(2000)
+                    VeilidBridge.veilidAttach()
+                    Thread.sleep(2000)
+                }
+                val key = getOrCreateVeilidRecordKey(prefs) ?: return@launch
+                val errText = "$tag: $message"
+                VeilidBridge.veilidDhtSet(key, 7, errText)
+                CrashLogger.logDir(this@MainActivity).mkdirs()
+                java.io.File(CrashLogger.logDir(this@MainActivity), "apperror_${System.currentTimeMillis()}.txt").writeText(errText + "\n" + (stackTrace ?: ""))
             } catch (_: Exception) {}
         }
     }
