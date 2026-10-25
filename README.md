@@ -48,8 +48,9 @@ A ready-to-install APK (debug-signed) is available on the
 The Kotlin client includes: OBD/BT connection, ZEV CAN protocol decoder, 6 radial
 gauges (SOC, RPM, Power, Current, Aux Battery, AC Power), cell voltage/temperature
 grids with tap detail, 4 signal charts with zoom/pan, GPS + osmdroid map with
-Organic Maps handoff, CAN error panel (read/clear), Veil telemetry service
-integration, preferences, dark mode, CSV export and an i-MiEV themed icon.
+Organic Maps handoff, CAN error panel (read/clear), cockpit panel (speed/SOC/power/gear/indicators),
+Veilid P2P telemetry (DHT create/set/get), SQLite history, demo-data mode,
+preferences, dark mode, CSV export and an i-MiEV themed icon.
 
 ## Debugging
 
@@ -185,3 +186,19 @@ Not in the repository, by design:
 
 Pull requests for additional compatibility patches welcome. Please do not submit
 proprietary binaries.
+
+## Veilid integration
+
+The client can deliver telemetry over the Veilid P2P network (no exposed ports,
+NAT traversal handled by Veilid):
+
+1. Open **Settings → Test Veilid Init**. This initialises the embedded Veilid
+   node (storage under the app's private dir), attaches to the network and runs a
+   DHT create/set/get round-trip. Status is shown in a toast.
+2. `VeilidBridge.veilidDhtCreate(subkeys)` creates a DHT record and returns its
+   key; `veilidDhtSet(key, subkey, data)` / `veilidDhtGet(key, subkey)` read and
+   write values. Use these to publish SOC, voltage, etc. to a shared record key.
+3. The Veilid node uses insecure file storage for the device key (no OS keyring
+   required) and stores its table/protected/block stores under the app's files dir.
+4. No ports need to be opened on the device; Veilid handles connectivity.
+
