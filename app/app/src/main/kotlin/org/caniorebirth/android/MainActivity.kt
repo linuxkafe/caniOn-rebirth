@@ -92,6 +92,11 @@ class MainActivity : AppCompatActivity() {
         CrashLogger.install(this)
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         AppCompatDelegate.setDefaultNightMode(if (prefs.getBoolean("dark_mode", true)) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO)
+        if (prefs.getBoolean("full_screen", false)) {
+            window.decorView.systemUiVisibility = (android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+                    or android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+        }
         if (prefs.getBoolean("force_landscape", false)) {
             requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
@@ -374,6 +379,7 @@ class MainActivity : AppCompatActivity() {
     private fun sendToVeilid(signals: ZevSignals, errors: List<CanBusError>) {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         if (!prefs.getBoolean("veil_send", true)) return
+        if (!prefs.getBoolean("veilid_enabled", true)) return
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (VeilidBridge.veilidGetState() != 2) {
@@ -401,6 +407,7 @@ class MainActivity : AppCompatActivity() {
     private fun sendAppError(tag: String, message: String, stackTrace: String? = null) {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
         if (!prefs.getBoolean("veil_send", true)) return
+        if (!prefs.getBoolean("veilid_enabled", true)) return
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (VeilidBridge.veilidGetState() != 2) {

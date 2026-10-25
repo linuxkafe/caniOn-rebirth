@@ -66,6 +66,24 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Dark mode (auto if off)" />
+        <Switch
+            android:id="@+id/swFullScreen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Full screen (hide status bar)" />
+
+        <Switch
+            android:id="@+id/swVeilidEnabled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enable Veilid telemetry" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Veilid is a peer-to-peer network. When enabled, the app publishes SOC, voltage, current, RPM, gear and errors to a DHT record readable from anywhere, without opening ports. Disable to keep all data local."
+            android:textSize="12sp"
+            android:padding="8dp" />
 
         <Switch
             android:id="@+id/swForceLandscape"
