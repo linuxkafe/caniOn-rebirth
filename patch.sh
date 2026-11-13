@@ -6,7 +6,7 @@
 # Produces an APK that:
 #   * speaks standard ELM327 instead of STN1110-only commands, so any
 #     ELM327-family adapter (Vgate iCar Pro 2S, …) receives data
-#   * installs and runs on Android 12/13/14/15
+#   * installs and runs on Android 12/13/14/15/16
 #
 # The original APK is required (it is not redistributed here). Everything
 # else is in this repository.
@@ -174,6 +174,10 @@ else
   sed -i 's|<activity android:label="caniOn152"|<activity android:exported="true" android:label="caniOn152"|' "$MANIFEST"
   echo "    android:exported=\"true\" on the launcher activity"
 fi
+# Android 12+ (and 16) require android:exported on every component with an
+# intent filter. The B4A broadcast receivers declare filters, so add the
+# attribute where missing — harmless at targetSdk 29, required later.
+sed -i 's|<receiver \([^>]*\)android:name=\([^>]*\)>|<receiver \1android:exported="false" android:name=\2>|g' "$MANIFEST" 2>/dev/null || true
 ok "manifest"
 
 # ------------------------------------------------- patch 3: versionName

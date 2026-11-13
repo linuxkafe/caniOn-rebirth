@@ -80,6 +80,7 @@ You can also check the protocol independently of the app:
 | "Invalid package" on Android 11+ | The APK was signed with the v1 scheme only; Android 11+ requires APK Signature Scheme v2 for `targetSdkVersion >= 30` | Sign with `apksigner`, v1 + v2 + v3 |
 | Blank screen after install | `targetSdkVersion` was raised to 33, which enables scoped storage; the app's SQLite database lives in the shared external storage and can no longer be opened | **Do not raise the target SDK** — see below |
 | App cannot list Bluetooth devices on Android 12+ | Declaring `BLUETOOTH_CONNECT` in the manifest *removes* the implicit grant that legacy apps get | Do **not** declare it; at `targetSdk 29` the platform grants it implicitly |
+| App does not install/run on Android 16 | Android 16 still runs apps with `targetSdk 29` in compatibility mode; the patch keeps `targetSdk 29` and adds `android:exported` to all components with intent filters | Use the patched APK from `./patch.sh` (v1+v2+v3 signed) |
 
 ### Why the target SDK stays at 29
 
