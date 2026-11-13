@@ -37,6 +37,21 @@ See **[INSTALL.md](INSTALL.md)** for the install procedure, the expected file
 size and SHA-256, and what to do if the phone reports *"a problem occurred while
 analysing the package"*.
 
+## Pre-built APK
+
+A ready-to-install APK (debug-signed) is available on the
+[Releases](https://github.com/linuxkafe/caniOn-rebirth/releases) page:
+
+- `caniOn_Rebirth_testing.apk` — open-source Kotlin client (debug)
+- `caniOn_Rebirth_release.apk` — open-source Kotlin client (release, signed)
+
+The Kotlin client includes: OBD/BT connection, ZEV CAN protocol decoder, 6 radial
+gauges (SOC, RPM, Power, Current, Aux Battery, AC Power), cell voltage/temperature
+grids with tap detail, 4 signal charts with zoom/pan, GPS + osmdroid map with
+Organic Maps handoff, CAN error panel (read/clear), cockpit panel (speed/SOC/power/gear/indicators),
+Veilid P2P telemetry (DHT create/set/get), SQLite history, demo-data mode,
+preferences, dark mode, CSV export and an i-MiEV themed icon.
+
 ## Debugging
 
 caniOn has three diagnostic channels, all of which work on the patched build
@@ -65,6 +80,7 @@ You can also check the protocol independently of the app:
 | "Invalid package" on Android 11+ | The APK was signed with the v1 scheme only; Android 11+ requires APK Signature Scheme v2 for `targetSdkVersion >= 30` | Sign with `apksigner`, v1 + v2 + v3 |
 | Blank screen after install | `targetSdkVersion` was raised to 33, which enables scoped storage; the app's SQLite database lives in the shared external storage and can no longer be opened | **Do not raise the target SDK** — see below |
 | App cannot list Bluetooth devices on Android 12+ | Declaring `BLUETOOTH_CONNECT` in the manifest *removes* the implicit grant that legacy apps get | Do **not** declare it; at `targetSdk 29` the platform grants it implicitly |
+| App does not install/run on Android 16 | Android 16 still runs apps with `targetSdk 29` in compatibility mode; the patch keeps `targetSdk 29` and adds `android:exported` to all components with intent filters | Use the patched APK from `./patch.sh` (v1+v2+v3 signed) |
 
 ### Why the target SDK stays at 29
 
@@ -109,6 +125,35 @@ format, the full CAN identifier map, the per-signal scaling, the odometer
 calibration and the cell layout. That document, not the code, is the durable
 artefact: it describes the *car*, so it can be reimplemented by anyone.
 
+## Veil telemetry service
+
+The `veil-service/` module is a Ktor micro-service that collects telemetry
+from the app:
+
+```bash
+cd veil-service
+gradle build
+java -Xmx256m -jar build/libs/veil-service-all.jar
+# Service listens on http://0.0.0.0:8100
+```
+
+The service checks if port 8100 is available before starting. Data is persisted
+in SQLite (`veil.db`). Endpoints:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| POST | `/api/vehicles/register` | Register a vehicle |
+| POST | `/api/vehicles/{id}/signals` | Update signals + CAN errors |
+| GET | `/api/vehicles/{id}` | Get vehicle state |
+| GET | `/api/vehicles/{id}/errors` | Get CAN errors |
+| POST | `/api/vehicles/{id}/errors/clear` | Clear CAN errors |
+| POST | `/api/vehicles/{id}/app-errors` | Record app error |
+| GET | `/api/vehicles/{id}/app-errors` | Get app errors |
+
+Configure the app in **Settings**: set the Veil host (PC IP), port (`8100`),
+and vehicle ID. The app sends data automatically when connected.
+
 ## Repository layout
 
 ```
@@ -142,3 +187,19 @@ Not in the repository, by design:
 
 Pull requests for additional compatibility patches welcome. Please do not submit
 proprietary binaries.
+
+## Veilid integration
+
+The client can deliver telemetry over the Veilid P2P network (no exposed ports,
+NAT traversal handled by Veilid):
+
+1. Open **Settings → Test Veilid Init**. This initialises the embedded Veilid
+   node (storage under the app's private dir), attaches to the network and runs a
+   DHT create/set/get round-trip. Status is shown in a toast.
+2. `VeilidBridge.veilidDhtCreate(subkeys)` creates a DHT record and returns its
+   key; `veilidDhtSet(key, subkey, data)` / `veilidDhtGet(key, subkey)` read and
+   write values. Use these to publish SOC, voltage, etc. to a shared record key.
+3. The Veilid node uses insecure file storage for the device key (no OS keyring
+   required) and stores its table/protected/block stores under the app's files dir.
+4. No ports need to be opened on the device; Veilid handles connectivity.
+

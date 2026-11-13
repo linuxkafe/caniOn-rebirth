@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">caniOn Rebirth</string>
+    <string name="title_errors">CAN Bus Errors</string>
+    <string name="title_settings">Veil Settings</string>
+    <string name="title_map">Map</string>
+    <string name="action_errors">Errors</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_clear_all">Clear All</string>
+</resources>

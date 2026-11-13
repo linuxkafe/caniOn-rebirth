@@ -43,13 +43,21 @@ class BluetoothObdTransport(
     private var running = false
 
     override fun open() {
-        val s = device.createRfcommSocketToServiceRecord(SPP_UUID)
-        socket = s
-        s.connect()
-        input = s.inputStream
-        output = s.outputStream
-        running = true
-        Thread({ readLoop() }, "obd-bt-reader").apply { isDaemon = true }.start()
+        try {
+            val s = device.createRfcommSocketToServiceRecord(SPP_UUID)
+            socket = s
+            s.connect()
+            input = s.inputStream
+            output = s.outputStream
+            running = true
+            Thread({ readLoop() }, "obd-bt-reader").apply { isDaemon = true }.start()
+        } catch (e: Exception) {
+            running = false
+            try { socket?.close() } catch (_: Exception) { }
+            socket = null
+            onError?.invoke(e)
+            throw e
+        }
     }
 
     override fun write(bytes: ByteArray) {

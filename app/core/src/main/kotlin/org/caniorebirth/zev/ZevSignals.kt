@@ -9,6 +9,8 @@ package org.caniorebirth.zev
 data class ZevSignals(
     // --- 0x298 ---------------------------------------------------------
     val motorRpm: Int? = null,
+    /** Cockpit light / blinker / high-beam bit flags (raw, from 0x424). */
+    val cockpitFlags: Int? = null,
 
     // --- 0x373 ---------------------------------------------------------
     /** Pack current in amperes. Positive = discharge, negative = charge. */
@@ -72,4 +74,26 @@ data class ZevSignals(
     val cellTemperatures: List<Int?> = emptyList(),
     /** True once the pack has been identified as 96-cell rather than 24-cell. */
     val is96CellPack: Boolean? = null,
+
+    // --- CAN Bus Errors -------------------------------------------------
+    /** List of active CAN bus errors. */
+    val canBusErrors: List<CanBusError> = emptyList(),
+    /** Whether there are any active CAN bus errors. */
+    val hasCanBusErrors: Boolean = false,
+)
+
+/**
+ * Represents a CAN bus error.
+ */
+data class CanBusError(
+    /** Error code from the vehicle. */
+    val code: Int,
+    /** Human-readable description of the error. */
+    val description: String,
+    /** Timestamp when the error was first detected (milliseconds since epoch). */
+    val timestamp: Long,
+    /** Whether this error has been cleared. */
+    val cleared: Boolean = false,
+    /** Timestamp when the error was cleared (milliseconds since epoch). */
+    val clearedTimestamp: Long? = null,
 )

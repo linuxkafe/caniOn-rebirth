@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:tabMode="scrollable" />
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ready"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+
+            <Button
+                android:id="@+id/btnConnect"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Connect to OBD adapter"
+                android:layout_marginBottom="8dp" />
+
+            <!-- DASHBOARD -->
+            <LinearLayout
+                android:id="@+id/sectionDashboard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="4dp">
+
+                    <org.caniorebirth.android.GaugeView
+                        android:id="@+id/gaugeSoc"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <org.caniorebirth.android.GaugeView
+                        android:id="@+id/gaugeRpm"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <org.caniorebirth.android.GaugeView
+                        android:id="@+id/gaugePower"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="4dp">
+
+                    <org.caniorebirth.android.GaugeView
+                        android:id="@+id/gaugeCurrent"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <org.caniorebirth.android.GaugeView
+                        android:id="@+id/gaugeAux"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+
+                    <org.caniorebirth.android.GaugeView
+                        android:id="@+id/gaugeAcPower"
+                        android:layout_width="0dp"
+                        android:layout_height="110dp"
+                        android:layout_weight="1" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="4dp">
+
+                    <TextView
+                        android:id="@+id/tvGear"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="P"
+                        android:textSize="48sp"
+                        android:textStyle="bold"
+                        android:textColor="#00E676"
+                        android:layout_marginEnd="24dp" />
+
+                    <TextView
+                        android:id="@+id/tvRange"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-- km"
+                        android:textSize="24sp"
+                        android:textColor="#00E676" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvCellSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cells: --"
+                    android:textSize="13sp"
+                    android:fontFamily="monospace"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/tvReadout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="12sp"
+                    android:fontFamily="monospace"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/tvErrors"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No errors"
+                    android:textSize="13sp"
+                    android:layout_marginBottom="8dp" />
+
+            </LinearLayout>
+
+            <!-- COCKPIT -->
+            <LinearLayout
+                android:id="@+id/sectionCockpit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <org.caniorebirth.android.CockpitView
+                    android:id="@+id/cockpitView"
+                    android:layout_width="match_parent"
+                    android:layout_height="400dp" />
+            </LinearLayout>
+
+            <!-- CHARTS -->
+            <LinearLayout
+                android:id="@+id/sectionCharts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="SOC %"
+                    android:textStyle="bold" />
+
+                <org.caniorebirth.android.SignalChartView
+                    android:id="@+id/chartSoc"
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Pack voltage (V)"
+                    android:textStyle="bold" />
+
+                <org.caniorebirth.android.SignalChartView
+                    android:id="@+id/chartVolt"
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Pack current (A)"
+                    android:textStyle="bold" />
+
+                <org.caniorebirth.android.SignalChartView
+                    android:id="@+id/chartCurr"
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cell voltage spread (max-min, V)"
+                    android:textStyle="bold" />
+
+                <org.caniorebirth.android.SignalChartView
+                    android:id="@+id/chartCellSpread"
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    android:layout_marginBottom="8dp" />
+
+            </LinearLayout>
+
+            <!-- CELLS -->
+            <LinearLayout
+                android:id="@+id/sectionCells"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cell voltages (V)"
+                    android:textStyle="bold" />
+
+                <org.caniorebirth.android.CellGridView
+                    android:id="@+id/cellGrid"
+                    android:layout_width="match_parent"
+                    android:layout_height="320dp"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cell temperatures (C)"
+                    android:textStyle="bold" />
+
+                <org.caniorebirth.android.CellGridView
+                    android:id="@+id/cellTempGrid"
+                    android:layout_width="match_parent"
+                    android:layout_height="320dp"
+                    android:layout_marginBottom="8dp" />
+            </LinearLayout>
+
+            <!-- HEATER -->
+            <LinearLayout
+                android:id="@+id/sectionHeater"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvHeater"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="14sp"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+
+            <!-- VEHICLE -->
+            <LinearLayout
+                android:id="@+id/sectionVehicle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvVehicle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="14sp"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+
+            <!-- MAP -->
+            <LinearLayout
+                android:id="@+id/sectionMap"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <fragment
+                    android:id="@+id/map"
+                    android:name="org.caniorebirth.android.MapFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="320dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
