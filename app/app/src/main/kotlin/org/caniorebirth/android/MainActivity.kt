@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
 
     private var client: ObdClient? = null
     private lateinit var historyDb: HistoryDb
-    private var transport: BluetoothObdTransport? = null
+    private var transport: ObdClient.Transport? = null
     private val parser = ZevCanParser()
 
     companion object {
@@ -238,6 +238,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun tryAutoConnect() {
         val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("wifi_obd", false)) {
+            val host = prefs.getString("wifi_host", "192.168.0.10") ?: "192.168.0.10"
+            val port = prefs.getString("wifi_port", "35000")?.toIntOrNull() ?: 35000
+            connectToWifi(host, port)
+            return
+        }
         val addr = prefs.getString("last_device", null) ?: return
         val needed = permissions()
         val missing = needed.filter { checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
@@ -318,9 +324,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun connect() {
+        val prefs = getSharedPreferences("veil_prefs", MODE_PRIVATE)
+        if (prefs.getBoolean("wifi_obd", false)) {
+            val host = prefs.getString("wifi_host", "192.168.0.10") ?: "192.168.0.10"
+            val port = prefs.getString("wifi_port", "35000")?.toIntOrNull() ?: 35000
+            connectToWifi(host, port)
+            return
+        }
         val adapters = BluetoothObdTransport.candidateAdapters(this)
         if (adapters.isEmpty()) {
-            status.text = "No paired Bluetooth device found. Pair your OBD adapter first."
+            status.text = "No paired Bluetooth device found. Pair your OBD adapter first, or enable WiFi OBD in Settings."
             return
         }
         if (adapters.size == 1) {
@@ -334,6 +347,42 @@ class MainActivity : AppCompatActivity() {
             .setItems(names) { _, which -> connectTo(adapters[which]) }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun connectToWifi(host: String, port: Int) {
+        val t = WifiObdTransport(this, host, port)
+        transport = t
+        val c = ObdClient(t, parser)
+        client = c
+        t.onBytes = { bytes -> c.onBytes(bytes) }
+        t.onError = { e -> runOnUiThread { status.text = "WiFi OBD error: ${e.message}" }; sendAppError("WifiObdTransport", e.message ?: "unknown", e.stackTraceToString()) }
+        c.onAdapterError = { line -> runOnUiThread { status.text = "Adapter said: $line" } }
+        c.onFrame = { frame ->
+            runOnUiThread {
+                try {
+                    val sig = parser.signals()
+                    readout.text = describe(sig)
+                    updateErrorsView(parser.getCurrentErrors())
+                    cellGrid?.setVoltages(sig.cellVoltages)
+                    cellGrid?.setTemperatures(sig.cellTemperatures.map { it?.toDouble() })
+                    cellTempGrid?.setVoltages(sig.cellTemperatures.map { it?.toDouble() })
+                    sig.gear?.let { tvGear.text = it.toString() }
+                    sig.odometerMiles?.let { tvRange.text = "%.0f km".format(it * 1.60934) }
+                    sendToVeilid(sig, parser.getCurrentErrors())
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "onFrame error", e)
+                }
+            }
+        }
+        status.text = "Connecting to $host:$port..."
+        Thread {
+            try {
+                t.open()
+                runOnUiThread { status.text = "Connected (WiFi)" }
+            } catch (e: Exception) {
+                runOnUiThread { status.text = "WiFi connect failed: ${e.message}" }
+            }
+        }.start()
     }
 
     private fun connectTo(device: android.bluetooth.BluetoothDevice) {
