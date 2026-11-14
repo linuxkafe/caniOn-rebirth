@@ -233,6 +233,12 @@ class MainActivity : AppCompatActivity() {
         gaugeAcPower.max = 5000f
 
         status.text = "Ready"
+        val prefsInit = getSharedPreferences("veil_prefs", MODE_PRIVATE)
+        if (prefsInit.getBoolean("wifi_obd", false)) {
+            btnConnect.text = "Connect to WiFi OBD"
+        } else {
+            btnConnect.text = "Connect to OBD adapter"
+        }
         tryAutoConnect()
     }
 
@@ -328,7 +334,12 @@ class MainActivity : AppCompatActivity() {
         if (prefs.getBoolean("wifi_obd", false)) {
             val host = prefs.getString("wifi_host", "192.168.0.10") ?: "192.168.0.10"
             val port = prefs.getString("wifi_port", "35000")?.toIntOrNull() ?: 35000
-            connectToWifi(host, port)
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("WiFi OBD")
+                .setMessage("Connect to $host:$port ?\n\n(Make sure your phone is connected to the OBD adapter's WiFi network)")
+                .setPositiveButton("Connect") { _, _ -> connectToWifi(host, port) }
+                .setNegativeButton("Cancel", null)
+                .show()
             return
         }
         val adapters = BluetoothObdTransport.candidateAdapters(this)

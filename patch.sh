@@ -20,6 +20,7 @@
 #   APKTOOL_JAR        path to apktool.jar (or set APKTOOL on PATH)
 #   BUILD_TOOLS_DIR    directory containing apksigner and zipalign
 #   KEYSTORE           keystore to sign with (default ./canion-debug.keystore)
+#   WIFI_MODE          set to 1 to force WiFi OBD (default: 0 = Bluetooth)
 
 set -euo pipefail
 
@@ -150,6 +151,33 @@ if grep -q 'const-string v3, "ST' "$SMALI"; then
   die "an STN1110 command survived the patch"
 fi
 ok "no STN1110-only command remains"
+
+# ------------------------------------------------------- patch 1b: enable WiFi OBD
+# The original app already contains a WiFi (SocketWrapper) code path
+# (pswitch_2 in the connection switch) but defaults to Bluetooth (type 0/1).
+# Force the default connection type to WiFi (2) so WiFi OBD adapters work.
+WIFI_MODE="${WIFI_MODE:-0}"
+if [ "$WIFI_MODE" = "1" ]; then
+  say "enabling WiFi OBD support (SocketWrapper path)"
+  if grep -q 'sput v2, Lemobility/canion/main;->_vvvvvvvvvvvvvvvvvvvvvvvvvvvv7:I' "$DECODED/smali/emobility/canion/main.smali"; then
+    python3 - "$DECODED/smali/emobility/canion/main.smali" << 'PYINNER'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+old = "    .line 431\n    sput v2, Lemobility/canion/main;->_vvvvvvvvvvvvvvvvvvvvvvvvvvvv7:I"
+new = "    .line 431\n    const/4 v2, 0x2\n    sput v2, Lemobility/canion/main;->_vvvvvvvvvvvvvvvvvvvvvvvvvvvv7:I"
+assert old in s, "WiFi patch target not found"
+s = s.replace(old, new, 1)
+open(p, "w").write(s)
+PYINNER
+    printf '    connection type 0/1 (BT/USB) -> 2 (WiFi)\n'
+    ok "WiFi OBD enabled (default IP 192.168.0.10:35000)"
+  else
+    warn "WiFi patch target not found (already patched?)"
+  fi
+else
+  say "WiFi OBD disabled (Bluetooth mode, default)"
+fi
 
 # ------------------------------------------------- patch 2: the target SDK
 # The target SDK is deliberately NOT raised.
